@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>contextella · 관계의 결</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, 'Apple SD Gothic Neo', sans-serif;
+    background: #08051A;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+  .stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 20%, rgba(120, 80, 220, 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(232, 164, 181, 0.10), transparent 60%),
+      linear-gradient(180deg, #0A0720 0%, #050313 100%);
+  }
+  .device-wrap {
+    position: relative;
+    transform-origin: center center;
+  }
+  /* tweak panel preserves white scrollbar */
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid rgba(232, 212, 162, 0.6); outline-offset: 1px;
+  }
+  /* korean-friendly typography defaults */
+  body, button, input { letter-spacing: -0.01em; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-tokens.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="today-flow.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="more-screens.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "vizStyle": "constellation",
+  "accentColor": "#E8D4A2",
+  "gaugeStyle": "gauge",
+  "fontScale": 1,
+  "darkMode": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [lang, setLang] = useState('ko');
+  const [screen, setScreen] = useState('dashboard'); // dashboard | result | relations | today | me
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [newUniverseOpen, setNewUniverseOpen] = useState(false);
+  const [universes, setUniverses] = useState(UNIVERSES);
+  const [activeUniverseId, setActiveUniverseId] = useState('family');
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const [scale, setScale] = useState(1);
+  const wrapRef = useRef(null);
+
+  const t = I18N[lang] || I18N.en;
+  const dark = tweaks.darkMode;
+  const accent = tweaks.accentColor;
+
+  // responsive scale of device
+  useEffect(() => {
+    const fit = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      const dw = 402, dh = 874;
+      const padW = w < 600 ? 0 : 80;
+      const padH = w < 600 ? 0 : 60;
+      const s = Math.min((w - padW) / dw, (h - padH) / dh, 1);
+      setScale(s);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  // body bg follows dark mode for letterbox visual harmony
+  useEffect(() => {
+    document.body.style.background = dark ? '#06041A' : '#E5DAF5';
+  }, [dark]);
+
+  const handleSelectPerson = (id) => {
+    if (id === 'me') return;
+    setSelectedPersonId(id);
+    setScreen('result');
+  };
+
+  const handleAddPerson = () => setSheetOpen(true);
+  const handleSaveAdd = () => {
+    setSheetOpen(false);
+    setSelectedPersonId('fr1');
+    setTimeout(() => setScreen('result'), 250);
+  };
+
+  const handleTabChange = (tab) => {
+    if (tab === 'home') setScreen('dashboard');
+    else if (tab === 'rel') setScreen('relations');
+    else if (tab === 'today') setScreen('today');
+    else if (tab === 'me') setScreen('me');
+  };
+
+  const selectedPerson = selectedPersonId ? findPerson(selectedPersonId) : null;
+
+  const handleSaveUniverse = (name) => {
+    const id = 'u' + Date.now();
+    setUniverses(prev => [...prev, { id, name, members: [] }]);
+    setActiveUniverseId(id);
+    setNewUniverseOpen(false);
+  };
+
+  return (
+    <div className="stage" style={{ fontSize: `${tweaks.fontScale}em` }}>
+      <div ref={wrapRef} className="device-wrap" style={{ transform: `scale(${scale})` }}>
+        <IOSDevice width={402} height={874} dark={dark}>
+          {/* Screen rendering */}
+          {screen === 'dashboard' && (
+            <DashboardScreen
+              t={t} lang={lang} dark={dark} accent={accent}
+              vizStyle={tweaks.vizStyle}
+              onLang={setLang}
+              onAdd={handleAddPerson}
+              onAddUniverse={() => setNewUniverseOpen(true)}
+              onSelectPerson={handleSelectPerson}
+              selectedId={selectedPersonId}
+              universes={universes}
+              activeUniverseId={activeUniverseId}
+              setActiveUniverseId={setActiveUniverseId}
+              onTabChange={handleTabChange}
+            />
+          )}
+          {screen === 'relations' && (
+            <RelationsScreen
+              t={t} lang={lang} dark={dark} accent={accent}
+              onLang={setLang}
+              onTabChange={handleTabChange}
+              universes={universes}
+              onSelectPerson={handleSelectPerson}
+              onAdd={handleAddPerson}
+            />
+          )}
+          {screen === 'today' && (
+            <TodayScreen
+              t={t} lang={lang} dark={dark} accent={accent}
+              onLang={setLang}
+              onTabChange={handleTabChange}
+              onSelectPerson={handleSelectPerson}
+            />
+          )}
+          {screen === 'me' && (
+            <MeScreen
+              t={t} lang={lang} dark={dark} accent={accent}
+              onLang={setLang}
+              onTabChange={handleTabChange}
+              tweaks={tweaks} setTweak={setTweak}
+              universes={universes}
+            />
+          )}
+          {screen === 'result' && (
+            <ResultScreen
+              t={t} lang={lang} dark={dark} accent={accent}
+              gaugeStyle={tweaks.gaugeStyle}
+              person={selectedPerson}
+              onBack={() => setScreen('dashboard')}
+            />
+          )}
+          {/* Add Person sheet — overlays on dashboard */}
+          {(screen === 'dashboard' || screen === 'relations') && (
+            <AddPersonSheet
+              t={t} lang={lang} dark={dark} accent={accent}
+              open={sheetOpen}
+              onClose={() => setSheetOpen(false)}
+              onSave={handleSaveAdd}
+              universes={universes}
+              activeUniverseId={activeUniverseId}
+            />
+          )}
+          {screen === 'dashboard' && (
+            <NewUniverseSheet
+              open={newUniverseOpen}
+              onClose={() => setNewUniverseOpen(false)}
+              onSave={handleSaveUniverse}
+              dark={dark} accent={accent} lang={lang}
+            />
+          )}
+        </IOSDevice>
+      </div>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label={lang === 'ko' ? '시각화' : 'Visualization'} />
+        <TweakRadio label={lang === 'ko' ? '우주 스타일' : 'Universe style'}
+                    value={tweaks.vizStyle}
+                    options={[
+                      { value: 'constellation', label: lang === 'ko' ? '별자리' : 'Stars' },
+                      { value: 'orbital', label: lang === 'ko' ? '궤도' : 'Orbit' },
+                      { value: 'grid', label: lang === 'ko' ? '카드' : 'Cards' },
+                    ]}
+                    onChange={(v) => setTweak('vizStyle', v)} />
+        <TweakRadio label={lang === 'ko' ? '궁합 표시' : 'Compatibility'}
+                    value={tweaks.gaugeStyle}
+                    options={[
+                      { value: 'gauge', label: lang === 'ko' ? '게이지' : 'Gauge' },
+                      { value: 'stars', label: lang === 'ko' ? '별점' : 'Stars' },
+                      { value: 'merge', label: lang === 'ko' ? '결합' : 'Merge' },
+                    ]}
+                    onChange={(v) => setTweak('gaugeStyle', v)} />
+
+        <TweakSection label={lang === 'ko' ? '테마' : 'Theme'} />
+        <TweakRadio label={lang === 'ko' ? '강조 색' : 'Accent'}
+                    value={tweaks.accentColor}
+                    options={[
+                      { value: '#E8D4A2', label: lang === 'ko' ? '샴페인' : 'Champ' },
+                      { value: '#F4C26B', label: lang === 'ko' ? '골드' : 'Gold' },
+                      { value: '#E8A4B5', label: lang === 'ko' ? '로즈' : 'Rose' },
+                      { value: '#C9A8E8', label: lang === 'ko' ? '라일락' : 'Lilac' },
+                    ]}
+                    onChange={(v) => setTweak('accentColor', v)} />
+        <TweakToggle label={lang === 'ko' ? '다크 모드' : 'Dark mode'}
+                     value={tweaks.darkMode}
+                     onChange={(v) => setTweak('darkMode', v)} />
+
+        <TweakSection label={lang === 'ko' ? '접근성' : 'Accessibility'} />
+        <TweakSlider label={lang === 'ko' ? '글자 크기' : 'Font size'}
+                     value={Math.round(tweaks.fontScale * 100)}
+                     min={85} max={130} step={5} unit="%"
+                     onChange={(v) => setTweak('fontScale', v / 100)} />
+
+        <TweakSection label={lang === 'ko' ? '데모 빠른 이동' : 'Demo nav'} />
+        <TweakRadio label={lang === 'ko' ? '화면' : 'Screen'}
+                    value={screen === 'dashboard' && sheetOpen ? 'add' : screen}
+                    options={[
+                      { value: 'dashboard', label: lang === 'ko' ? '홈' : 'Home' },
+                      { value: 'relations', label: lang === 'ko' ? '관계' : 'Rel.' },
+                      { value: 'today', label: lang === 'ko' ? '오늘' : 'Today' },
+                      { value: 'me', label: lang === 'ko' ? '나' : 'Me' },
+                      { value: 'add', label: lang === 'ko' ? '추가' : 'Add' },
+                      { value: 'result', label: lang === 'ko' ? '분석' : 'Result' },
+                    ]}
+                    onChange={(v) => {
+                      if (v === 'add') { setScreen('dashboard'); setSheetOpen(true); }
+                      else if (v === 'result') {
+                        setScreen('result');
+                        if (!selectedPersonId) setSelectedPersonId('fr1');
+                      }
+                      else { setScreen(v); setSheetOpen(false); }
+                    }} />
+        <TweakSelect label={lang === 'ko' ? '언어' : 'Language'}
+                     value={lang}
+                     options={LANGS.map(l => ({ value: l.code, label: l.label }))}
+                     onChange={setLang} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
