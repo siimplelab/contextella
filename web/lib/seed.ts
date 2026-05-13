@@ -1,0 +1,71 @@
+import type { Person, Universe } from './types';
+
+export const ME: Person = {
+  id: 'me',
+  name_ko: '나',
+  name_en: 'Me',
+  relation_ko: '본인',
+  relation_en: 'Self',
+  element: 'water',
+  birth: '1993.06.14',
+  time: '23:40',
+  initials: '나',
+  angle: 0,
+};
+
+export const SEED_UNIVERSES: Universe[] = [
+  {
+    id: 'family', name_ko: '가족', name_en: 'Family', icon: 'home', accentTint: '#E8D4A2',
+    members: [
+      { id: 'f1', name_ko: '어머니', name_en: 'Mom', relation_ko: '엄마', relation_en: 'Mother',
+        element: 'wood', birth: '1965.03.22', time: '06:30', initials: '엄', emoji: '🌸',
+        score: 82, angle: 30, distance: 0.55 },
+      { id: 'f2', name_ko: '아버지', name_en: 'Dad', relation_ko: '아빠', relation_en: 'Father',
+        element: 'earth', birth: '1962.08.11', time: '14:00', initials: '아', emoji: '🌲',
+        score: 71, angle: 115, distance: 0.7 },
+      { id: 'f3', name_ko: '동생', name_en: 'Sibling', relation_ko: '여동생', relation_en: 'Sister',
+        element: 'fire', birth: '1996.04.18', time: null, initials: '동', emoji: '🌶',
+        score: 88, angle: 200, distance: 0.5 },
+      { id: 'f4', name_ko: '할머니', name_en: 'Grandma', relation_ko: '외할머니', relation_en: 'Grandma',
+        element: 'metal', birth: '1938.11.04', time: '03:15', initials: '할',
+        score: 76, angle: 290, distance: 0.78 },
+    ],
+  },
+  {
+    id: 'friends1', name_ko: '친구 그룹 1', name_en: 'Friends 1', icon: 'sparkle', accentTint: '#C9A8E8',
+    members: [
+      { id: 'fr1', name_ko: '서연', name_en: 'Seoyeon', relation_ko: '연인', relation_en: 'Partner',
+        element: 'fire', birth: '1994.11.02', time: '09:15', initials: '서', emoji: '💖',
+        score: 87, angle: 35, distance: 0.5 },
+      { id: 'fr2', name_ko: '도윤', name_en: 'Doyoon', relation_ko: '친구', relation_en: 'Friend',
+        element: 'metal', birth: '1992.09.18', time: '14:00', initials: '도',
+        score: 68, angle: 145, distance: 0.72 },
+      { id: 'fr3', name_ko: '지우', name_en: 'Jiwoo', relation_ko: '오랜 친구', relation_en: 'Old friend',
+        element: 'water', birth: '1993.07.30', time: '21:00', initials: '지', emoji: '🌊',
+        score: 91, angle: 250, distance: 0.45 },
+      { id: 'fr4', name_ko: '민서', name_en: 'Minseo', relation_ko: '친구', relation_en: 'Friend',
+        element: 'wood', birth: '1995.02.09', time: null, initials: '민',
+        score: 73, angle: 330, distance: 0.65 },
+      { id: 'fr5', name_ko: '윤호', name_en: 'Yunho', relation_ko: '친구', relation_en: 'Friend',
+        element: 'earth', birth: '1991.10.21', time: '17:50', initials: '윤',
+        score: 64, angle: 90, distance: 0.85 },
+    ],
+  },
+  {
+    id: 'work', name_ko: '직장', name_en: 'Work', icon: 'briefcase', accentTint: '#E8A4B5',
+    members: [
+      { id: 'w1', name_ko: '하준', name_en: 'Hajun', relation_ko: '팀장', relation_en: 'Lead',
+        element: 'earth', birth: '1988.12.07', time: null, initials: '하', emoji: '💼',
+        score: 55, angle: 25, distance: 0.55 },
+      { id: 'w2', name_ko: '예린', name_en: 'Yerin', relation_ko: '동료', relation_en: 'Colleague',
+        element: 'water', birth: '1990.05.16', time: '11:20', initials: '예',
+        score: 79, angle: 130, distance: 0.62 },
+      { id: 'w3', name_ko: '시우', name_en: 'Siwoo', relation_ko: '동료', relation_en: 'Colleague',
+        element: 'metal', birth: '1989.01.27', time: '08:00', initials: '시',
+        score: 62, angle: 240, distance: 0.78 },
+      { id: 'w4', name_ko: '재민', name_en: 'Jaemin', relation_ko: '주니어', relation_en: 'Junior',
+        element: 'fire', birth: '1997.06.03', time: '19:40', initials: '재',
+        score: 70, angle: 320, distance: 0.7 },
+    ],
+  },
+];
