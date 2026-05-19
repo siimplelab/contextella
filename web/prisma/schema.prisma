@@ -1,0 +1,58 @@
+// Contextella data model. Saju values (pillars, element, scores) are never
+// stored — only birth data is persisted; the engine in lib/saju computes the
+// rest on demand so it can never go stale.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String     @id @default(cuid())
+  email          String     @unique
+  passwordHash   String
+  name           String
+  // Birth fields are null until onboarding is completed.
+  birthDate      String? // "YYYY.MM.DD"
+  birthTime      String? // "HH:MM"
+  birthTimeKnown Boolean    @default(false)
+  gender         String? // "f" | "m" | "o"
+  accentTint     String?
+  createdAt      DateTime   @default(now())
+  universes      Universe[]
+}
+
+model Universe {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nameKo     String
+  nameEn     String
+  icon       String?
+  accentTint String?
+  createdAt  DateTime @default(now())
+  members    Person[]
+
+  @@index([userId])
+}
+
+model Person {
+  id             String   @id @default(cuid())
+  universeId     String
+  universe       Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+  nameKo         String
+  nameEn         String
+  relation       String // "family" | "partner" | "friend" | "colleague" | "other"
+  gender         String // "f" | "m" | "o"
+  birthDate      String // "YYYY.MM.DD"
+  birthTime      String? // "HH:MM"
+  birthTimeKnown Boolean  @default(false)
+  emoji          String?
+  createdAt      DateTime @default(now())
+
+  @@index([universeId])
+}

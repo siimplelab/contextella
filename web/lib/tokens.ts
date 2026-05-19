@@ -8,42 +8,36 @@ export const ACCENT_PALETTE = {
 } as const;
 
 export interface ElementInfo {
-  ko: string; en: string; ja?: string; zh?: string; es?: string;
-  label_ko: string; label_en: string;
+  label: Record<Lang, string>; // "물의 기운" / "Water Energy" / …
+  short: Record<Lang, string>; // "물" / "Water" / …
   c1: string; c2: string; c3: string;
-  glyph: string;
 }
 
 export const ELEMENTS: Record<ElementKey, ElementInfo> = {
   water: {
-    ko: '수(水)', en: 'Water', ja: '水', zh: '水', es: 'Agua',
-    label_ko: '물의 기운', label_en: 'Water Energy',
+    label: { ko: '물의 기운', en: 'Water Energy', ja: '水の気', zh: '水之气', es: 'Energía de agua' },
+    short: { ko: '물', en: 'Water', ja: '水', zh: '水', es: 'Agua' },
     c1: '#7AC4E8', c2: '#3D6FE8', c3: '#1A2A6B',
-    glyph: '水',
   },
   fire: {
-    ko: '화(火)', en: 'Fire',
-    label_ko: '불의 기운', label_en: 'Fire Energy',
+    label: { ko: '불의 기운', en: 'Fire Energy', ja: '火の気', zh: '火之气', es: 'Energía de fuego' },
+    short: { ko: '불', en: 'Fire', ja: '火', zh: '火', es: 'Fuego' },
     c1: '#FFB088', c2: '#E85A6B', c3: '#7A1F4D',
-    glyph: '火',
   },
   wood: {
-    ko: '목(木)', en: 'Wood',
-    label_ko: '나무의 기운', label_en: 'Wood Energy',
+    label: { ko: '나무의 기운', en: 'Wood Energy', ja: '木の気', zh: '木之气', es: 'Energía de madera' },
+    short: { ko: '나무', en: 'Wood', ja: '木', zh: '木', es: 'Madera' },
     c1: '#9DD6A8', c2: '#3FA76A', c3: '#143D2B',
-    glyph: '木',
   },
   metal: {
-    ko: '금(金)', en: 'Metal',
-    label_ko: '쇠의 기운', label_en: 'Metal Energy',
+    label: { ko: '쇠의 기운', en: 'Metal Energy', ja: '金の気', zh: '金之气', es: 'Energía de metal' },
+    short: { ko: '쇠', en: 'Metal', ja: '金', zh: '金', es: 'Metal' },
     c1: '#F4E5C2', c2: '#C9A55E', c3: '#5C4220',
-    glyph: '金',
   },
   earth: {
-    ko: '토(土)', en: 'Earth',
-    label_ko: '흙의 기운', label_en: 'Earth Energy',
+    label: { ko: '흙의 기운', en: 'Earth Energy', ja: '土の気', zh: '土之气', es: 'Energía de tierra' },
+    short: { ko: '흙', en: 'Earth', ja: '土', zh: '土', es: 'Tierra' },
     c1: '#D9B89A', c2: '#A87750', c3: '#3D2817',
-    glyph: '土',
   },
 };
 

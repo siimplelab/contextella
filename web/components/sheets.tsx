@@ -1,11 +1,8 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { SANS, formatDate, shade } from '@/lib/tokens';
-import { I18N } from '@/lib/i18n';
+import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
-import type { Person, ElementKey } from '@/lib/types';
-
-const ELEMENT_POOL: ElementKey[] = ['water', 'fire', 'wood', 'metal', 'earth'];
 
 export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved?: (id: string) => void }) {
   const lang = useStore(s => s.lang);
@@ -18,54 +15,83 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
 
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
-  const [universe, setUniverse] = useState(activeUniverseId);
-  const [relation, setRelation] = useState('partner');
-  const [gender, setGender] = useState('f');
-  const [year, setYear] = useState('1994');
-  const [month, setMonth] = useState('11');
-  const [day, setDay] = useState('02');
-  const [hour, setHour] = useState('09');
-  const [min, setMin] = useState('15');
+  // Universe selection: defaults to the active universe until the user picks one.
+  const [universeOverride, setUniverseOverride] = useState<string | null>(null);
+  const [relation, setRelation] = useState('friend');
+  const [gender, setGender] = useState('o');
+  const [year, setYear] = useState('');
+  const [month, setMonth] = useState('');
+  const [day, setDay] = useState('');
+  const [hour, setHour] = useState('');
+  const [min, setMin] = useState('');
   const [unknown, setUnknown] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => { setUniverse(activeUniverseId); }, [activeUniverseId, open]);
+  const universe = universeOverride && universes.some(u => u.id === universeOverride)
+    ? universeOverride
+    : activeUniverseId;
 
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
   const fieldBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)';
   const fieldBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(26,21,56,0.10)';
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
+    setError('');
+    const y = parseInt(year, 10), m = parseInt(month, 10), d = parseInt(day, 10);
+    if (!name.trim()) {
+      setError(pick(lang, {
+        ko: '이름을 입력해 주세요', en: 'Please enter a name',
+        ja: '名前を入力してください', zh: '请输入姓名', es: 'Introduce un nombre',
+      }));
+      return;
+    }
+    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > 31) {
+      setError(pick(lang, {
+        ko: '생년월일을 확인해 주세요', en: 'Check the date of birth',
+        ja: '生年月日を確認してください', zh: '请检查出生日期', es: 'Revisa la fecha de nacimiento',
+      }));
+      return;
+    }
+    let birthTime: string | null = null;
+    if (!unknown) {
+      const h = parseInt(hour, 10), mi = parseInt(min, 10);
+      if (hour === '' || min === '' || h > 23 || mi > 59) {
+        setError(pick(lang, {
+          ko: '태어난 시간을 확인해 주세요', en: 'Check the time of birth',
+          ja: '生まれた時刻を確認してください', zh: '请检查出生时辰', es: 'Revisa la hora de nacimiento',
+        }));
+        return;
+      }
+      birthTime = `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`;
+    }
+    const birthDate = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
+
     setSaving(true);
-    setTimeout(() => {
-      const id = 'p' + Date.now();
-      const y = parseInt(year, 10) || 1990;
-      const m = String(parseInt(month, 10) || 1).padStart(2, '0');
-      const d = String(parseInt(day, 10) || 1).padStart(2, '0');
-      const element = ELEMENT_POOL[(y + parseInt(m, 10) + parseInt(d, 10)) % 5];
-      const score = 55 + ((y + parseInt(m, 10) * 7 + parseInt(d, 10) * 3) % 40);
-      const p: Person = {
-        id,
-        name_ko: name || '이름',
-        name_en: name || 'Friend',
-        relation_ko: relation,
-        relation_en: relation,
-        element,
-        birth: `${y}.${m}.${d}`,
-        time: unknown ? null : `${hour}:${min}`,
-        initials: (name || 'A').slice(0, 1),
-        emoji: emoji || undefined,
-        score,
-        angle: (parseInt(d, 10) * 12) % 360,
-        distance: 0.45 + ((parseInt(m, 10) % 5) * 0.08),
-      };
-      addPerson(universe, p);
-      setSaving(false);
-      setName(''); setEmoji('');
-      onSaved?.(id);
-      onClose();
-    }, 900);
+    const id = await addPerson({
+      universeId: universe,
+      name: name.trim(),
+      relation,
+      gender,
+      birthDate,
+      birthTime,
+      emoji: emoji || undefined,
+    });
+    setSaving(false);
+    if (!id) {
+      setError(pick(lang, {
+        ko: '저장에 실패했어요', en: 'Could not save',
+        ja: '保存できませんでした', zh: '保存失败', es: 'No se pudo guardar',
+      }));
+      return;
+    }
+    setName(''); setEmoji('');
+    setYear(''); setMonth(''); setDay(''); setHour(''); setMin('');
+    setUnknown(false); setUniverseOverride(null);
+    onSaved?.(id);
+    onClose();
   };
 
   const seg = (label: string, value: string, options: { v: string; label: string }[], setter: (v: string) => void) => (
@@ -154,20 +180,20 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
 
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 13, color: sub, marginBottom: 8, letterSpacing: 0.2, fontWeight: 500 }}>
-            {lang === 'ko' ? '어느 우주에' : 'Which universe'}
+            {pick(lang, { ko: '어느 우주에', en: 'Which universe', ja: 'どの宇宙に', zh: '加入哪个宇宙', es: 'En qué universo' })}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {universes.map(u => {
               const active = u.id === universe;
               return (
-                <button key={u.id} onClick={() => setUniverse(u.id)} style={{
+                <button key={u.id} onClick={() => setUniverseOverride(u.id)} style={{
                   minHeight: 44, padding: '0 16px', borderRadius: 14,
                   background: active ? (dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,1)') : fieldBg,
                   border: `0.5px solid ${active ? accent : fieldBorder}`,
                   color: active ? (dark ? accent : '#1A1538') : sub,
                   fontSize: 14, fontWeight: active ? 600 : 500, letterSpacing: -0.2,
                   cursor: 'pointer', fontFamily: SANS, transition: 'all .15s',
-                }}>{lang === 'ko' ? u.name_ko : u.name_en}</button>
+                }}>{u.name_ko}</button>
               );
             })}
           </div>
@@ -230,9 +256,9 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
             <div style={{ fontSize: 12, color: accent, letterSpacing: -0.1 }}>{datePreview()}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {numField(year, setYear, 9999, lang === 'ko' ? '연도' : 'YYYY')}
-            {numField(month, setMonth, 12, lang === 'ko' ? '월' : 'MM', 80)}
-            {numField(day, setDay, 31, lang === 'ko' ? '일' : 'DD', 80)}
+            {numField(year, setYear, 9999, pick(lang, { ko: '연도', en: 'YYYY', ja: '年', zh: '年', es: 'AAAA' }))}
+            {numField(month, setMonth, 12, pick(lang, { ko: '월', en: 'MM', ja: '月', zh: '月', es: 'MM' }), 80)}
+            {numField(day, setDay, 31, pick(lang, { ko: '일', en: 'DD', ja: '日', zh: '日', es: 'DD' }), 80)}
           </div>
         </div>
 
@@ -260,9 +286,9 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
           </div>
           {!unknown ? (
             <div style={{ display: 'flex', gap: 8 }}>
-              {numField(hour, setHour, 23, lang === 'ko' ? '시' : 'HH', 110)}
+              {numField(hour, setHour, 23, pick(lang, { ko: '시', en: 'HH', ja: '時', zh: '时', es: 'HH' }), 110)}
               <div style={{ alignSelf: 'center', color: sub, fontSize: 18, fontWeight: 500 }}>:</div>
-              {numField(min, setMin, 59, lang === 'ko' ? '분' : 'MM', 110)}
+              {numField(min, setMin, 59, pick(lang, { ko: '분', en: 'MM', ja: '分', zh: '分', es: 'MM' }), 110)}
             </div>
           ) : (
             <div style={{
@@ -272,6 +298,10 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
             }}>{t.timeUnknownHint}</div>
           )}
         </div>
+
+        {error && (
+          <div style={{ fontSize: 13, color: '#E8A4B5', marginBottom: 10, lineHeight: 1.4 }}>{error}</div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
           <button onClick={onClose} style={{
@@ -330,13 +360,21 @@ export function NewUniverseSheet({ open, onClose }: { open: boolean; onClose: ()
           margin: '4px auto 18px',
         }} />
         <div style={{ fontSize: 22, fontWeight: 600, color: fg, letterSpacing: -0.5 }}>
-          {lang === 'ko' ? '새 우주 만들기' : 'New universe'}
+          {pick(lang, { ko: '새 우주 만들기', en: 'New universe', ja: '新しい宇宙をつくる', zh: '创建新宇宙', es: 'Nuevo universo' })}
         </div>
         <div style={{ fontSize: 13, color: sub, marginTop: 4, marginBottom: 16 }}>
-          {lang === 'ko' ? '관계의 묶음에 이름을 붙여보세요' : 'Name a circle of people'}
+          {pick(lang, {
+            ko: '관계의 묶음에 이름을 붙여보세요', en: 'Name a circle of people',
+            ja: '関係のまとまりに名前をつけましょう', zh: '为一组关系命名',
+            es: 'Pon nombre a un círculo de personas',
+          })}
         </div>
         <input value={name} onChange={e => setName(e.target.value)}
-               placeholder={lang === 'ko' ? '예) 동아리, 운동 모임' : 'e.g. Book club, Gym crew'}
+               placeholder={pick(lang, {
+                 ko: '예) 동아리, 운동 모임', en: 'e.g. Book club, Gym crew',
+                 ja: '例）サークル、運動仲間', zh: '例）社团、运动小组',
+                 es: 'ej. Club de lectura, Grupo de gimnasio',
+               })}
                style={{
                  width: '100%', minHeight: 56, padding: '0 18px', borderRadius: 14,
                  background: fieldBg, border: `0.5px solid ${fieldBorder}`,
@@ -348,13 +386,13 @@ export function NewUniverseSheet({ open, onClose }: { open: boolean; onClose: ()
             flex: 1, minHeight: 56, borderRadius: 16, border: 'none', cursor: 'pointer',
             background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(26,21,56,0.06)',
             color: fg, fontSize: 16, fontWeight: 500, fontFamily: SANS,
-          }}>{lang === 'ko' ? '취소' : 'Cancel'}</button>
-          <button onClick={() => { if (name.trim()) { addUniverse(name.trim()); setName(''); onClose(); } }} style={{
+          }}>{pick(lang, { ko: '취소', en: 'Cancel', ja: 'キャンセル', zh: '取消', es: 'Cancelar' })}</button>
+          <button onClick={async () => { if (name.trim()) { await addUniverse(name.trim()); setName(''); onClose(); } }} style={{
             flex: 2, minHeight: 56, borderRadius: 16, border: 'none', cursor: 'pointer',
             background: `linear-gradient(135deg, ${accent}, ${shade(accent, -15)})`,
             color: '#1A1538', fontSize: 16, fontWeight: 600, fontFamily: SANS,
             boxShadow: `0 8px 20px ${accent}55`,
-          }}>{lang === 'ko' ? '만들기' : 'Create'}</button>
+          }}>{pick(lang, { ko: '만들기', en: 'Create', ja: 'つくる', zh: '创建', es: 'Crear' })}</button>
         </div>
       </div>
     </>

@@ -1,13 +1,22 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ELEMENTS, SANS, cosmicBg, formatDate } from '@/lib/tokens';
+import { SANS, cosmicBg, formatDate } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
-import { buildDayReport, dayHeadline } from '@/lib/saju';
+import { buildDayReport, dayHeadline, dailyAdvice, peakHourOf, dayPillarOf } from '@/lib/saju';
 import { ElementOrb, StarField } from '@/components/primitives';
 import { ScreenHeader, BottomTabBar } from '@/components/chrome';
 import { FlowRow } from '@/components/today-flow';
+import { pick } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
+
+const WEEKDAYS: Record<Lang, string[]> = {
+  ko: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  ja: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+  zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+  es: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+};
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -16,27 +25,26 @@ export default function TodayScreen() {
   const accent = accentHex(useStore(s => s.tweaks.accent));
   const universes = useStore(s => s.universes);
 
-  const report = useMemo(() => buildDayReport(universes), [universes, new Date().toDateString()]);
+  const today = new Date();
+  const todayStr = today.toDateString();
+  const report = useMemo(() => buildDayReport(universes), [universes, todayStr]);
   const headline = dayHeadline(report, lang);
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
-  const dayEl = ELEMENTS[report.dayElement];
-  const today = new Date();
-  const weekday = lang === 'ko'
-    ? ['일', '월', '화', '수', '목', '금', '토'][today.getDay()] + '요일'
-    : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];
+  const weekday = WEEKDAYS[lang][today.getDay()];
 
+  const todayDate = today.getDate();
   const hours = useMemo(() => {
     const arr: { h: number; e: number }[] = [];
-    const peakHour = (report.dayElement.charCodeAt(0) * 3) % 22 + 1;
+    const peakHour = peakHourOf(dayPillarOf());
     for (let h = 0; h < 24; h += 2) {
       const dist = Math.min(Math.abs(h - peakHour), 24 - Math.abs(h - peakHour));
       const base = 60 + Math.cos((dist / 12) * Math.PI) * 30;
-      const wobble = ((h * 7 + today.getDate()) % 9) - 4;
+      const wobble = ((h * 7 + todayDate) % 9) - 4;
       arr.push({ h, e: Math.max(20, Math.min(98, Math.round(base + wobble))) });
     }
     return arr;
-  }, [report.dayElement, today.getDate()]);
+  }, [report.dayElement, todayDate]);
 
   const peakIdx = hours.reduce((mi, p, i) => p.e > hours[mi].e ? i : mi, 0);
   const lowIdx = hours.reduce((mi, p, i) => p.e < hours[mi].e ? i : mi, 0);
@@ -46,21 +54,7 @@ export default function TodayScreen() {
     : 'linear-gradient(155deg, rgba(255,255,255,0.85), rgba(240,233,255,0.6))';
   const cardBorder = `0.5px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)'}`;
 
-  const advice = useMemo(() => {
-    const map = {
-      water: { ko: ['깊이 듣는 대화', '결정을 미루지 말고 따뜻하게', '물 한 잔, 짧은 산책'],
-               en: ['Listen deeply in conversation', 'Decide with warmth, not delay', 'Water, a brief walk'] },
-      wood:  { ko: ['새 시작을 격려해 보세요', '작은 약속부터 지키기', '식물 곁에서 잠시'],
-               en: ['Encourage a new beginning', 'Keep one small promise', 'Pause near something green'] },
-      fire:  { ko: ['따뜻한 안부 전하기', '큰 감정 다루기 좋아요', '햇볕 아래 5분'],
-               en: ['Send a warm hello', 'Big emotions land well today', 'Five minutes of sunlight'] },
-      earth: { ko: ['천천히, 차근차근 마무리', '책상 위 정리', '땅에 발을 붙이기'],
-               en: ['Wrap things up slowly', 'Tidy your desk', 'Feet on the ground'] },
-      metal: { ko: ['군더더기를 덜어내기', '경계를 분명히', '깊은 호흡 세 번'],
-               en: ['Trim what is excess', 'Hold a clean boundary', 'Three deep breaths'] },
-    };
-    return map[report.dayElement][lang === 'ko' ? 'ko' : 'en'];
-  }, [report.dayElement, lang]);
+  const advice = useMemo(() => dailyAdvice(report.dayElement, lang), [report.dayElement, lang]);
 
   return (
     <div style={{
@@ -69,8 +63,8 @@ export default function TodayScreen() {
     }}>
       <StarField count={dark ? 70 : 22} seed={3} opacity={dark ? 0.55 : 0.14} />
       <div style={{ position: 'relative', height: '100%', overflow: 'auto', paddingBottom: 130 }}>
-        <div style={{ height: 54 }} />
-        <ScreenHeader title={lang === 'ko' ? '오늘' : 'Today'}
+        <div style={{ height: 20 }} />
+        <ScreenHeader title={pick(lang, { ko: '오늘', en: 'Today', ja: '今日', zh: '今天', es: 'Hoy' })}
                       sub={`${formatDate(today, lang)} · ${weekday}`} />
 
         <div style={{
@@ -85,7 +79,7 @@ export default function TodayScreen() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, letterSpacing: 1.4, color: accent,
                             textTransform: 'uppercase', fontWeight: 600 }}>
-                {lang === 'ko' ? `오늘의 기운 · ${dayEl.label_ko}` : `Day energy · ${dayEl.label_en}`}
+                {headline.eyebrow}
               </div>
               <div style={{ fontSize: 22, fontWeight: 600, color: fg, letterSpacing: -0.5,
                             lineHeight: 1.25, marginTop: 6 }}>
@@ -105,10 +99,10 @@ export default function TodayScreen() {
         }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: fg }}>
-              {lang === 'ko' ? '시간별 흐름' : 'Hour by hour'}
+              {pick(lang, { ko: '시간별 흐름', en: 'Hour by hour', ja: '時間ごとの流れ', zh: '逐时流动', es: 'Hora por hora' })}
             </div>
             <div style={{ fontSize: 11, color: sub }}>
-              {lang === 'ko' ? '결의 높낮이' : 'Energy curve'}
+              {pick(lang, { ko: '결의 높낮이', en: 'Energy curve', ja: '気の高低', zh: '气的起伏', es: 'Curva de energía' })}
             </div>
           </div>
           <HourCurve hours={hours} peakIdx={peakIdx} lowIdx={lowIdx} accent={accent} dark={dark} lang={lang} />
@@ -127,7 +121,11 @@ export default function TodayScreen() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
               <span style={{ width: 6, height: 6, borderRadius: 3, background: '#7BD89A' }} />
               <span style={{ fontSize: 11, color: sub, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
-                {lang === 'ko' ? '오늘 잘 맞는 결' : 'Today’s bright currents'}
+                {pick(lang, {
+                  ko: '오늘 잘 맞는 결', en: 'Today’s bright currents',
+                  ja: '今日よく合う機微', zh: '今天契合的纹理',
+                  es: 'Corrientes luminosas de hoy',
+                })}
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -147,7 +145,11 @@ export default function TodayScreen() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
               <span style={{ width: 6, height: 6, borderRadius: 3, background: '#E8A4B5' }} />
               <span style={{ fontSize: 11, color: sub, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
-                {lang === 'ko' ? '한 발 거리를 둘 결' : 'Step softly'}
+                {pick(lang, {
+                  ko: '한 발 거리를 둘 결', en: 'Step softly',
+                  ja: '一歩の距離を置く機微', zh: '宜留一步距离的纹理',
+                  es: 'Pisar con suavidad',
+                })}
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -167,7 +169,11 @@ export default function TodayScreen() {
           animation: 'ctx-rise .5s ease both .2s',
         }}>
           <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
-            {lang === 'ko' ? '오늘의 결을 다듬는 법' : 'Tune today’s grain'}
+            {pick(lang, {
+              ko: '오늘의 결을 다듬는 법', en: 'Tune today’s grain',
+              ja: '今日の機微を整える', zh: '调理今日的纹理',
+              es: 'Afina la textura de hoy',
+            })}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
             {advice.map((a, i) => (
@@ -238,7 +244,7 @@ function HourCurve({ hours, peakIdx, lowIdx, accent, dark, lang }:
           return (
             <text key={h} x={x} y={H + 14} fill={dark ? 'rgba(255,255,255,0.45)' : 'rgba(26,21,56,0.5)'}
                   fontSize="10" textAnchor="middle" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {String(h).padStart(2, '0')}{lang === 'ko' ? '시' : ':00'}
+              {String(h).padStart(2, '0')}{pick(lang, { ko: '시', en: ':00', ja: '時', zh: '时', es: ':00' })}
             </text>
           );
         })}
@@ -250,15 +256,16 @@ function HourCurve({ hours, peakIdx, lowIdx, accent, dark, lang }:
 function PeakBadge({ type, hour, energy, dark, lang }:
   { type: 'peak' | 'low'; hour: number; energy: number; dark: boolean; lang: Lang }) {
   const c = type === 'peak' ? '#7BD89A' : '#E8A4B5';
-  const labelKo = type === 'peak' ? '가장 맑은 시간' : '잠시 쉬어가는 시간';
-  const labelEn = type === 'peak' ? 'Brightest hour' : 'Softest hour';
+  const label = type === 'peak'
+    ? pick(lang, { ko: '가장 맑은 시간', en: 'Brightest hour', ja: '最も澄んだ時間', zh: '最清朗的时辰', es: 'La hora más luminosa' })
+    : pick(lang, { ko: '잠시 쉬어가는 시간', en: 'Softest hour', ja: 'ひと休みの時間', zh: '稍作休息的时辰', es: 'La hora más suave' });
   return (
     <div style={{
       flex: 1, padding: '10px 12px', borderRadius: 12,
       background: `${c}1f`, border: `0.5px solid ${c}33`, fontFamily: SANS,
     }}>
       <div style={{ fontSize: 10, color: c, letterSpacing: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
-        {lang === 'ko' ? labelKo : labelEn}
+        {label}
       </div>
       <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2,
                     color: dark ? '#fff' : '#1A1538',

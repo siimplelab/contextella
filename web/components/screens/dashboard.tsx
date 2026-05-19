@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ELEMENTS, SANS, cosmicBg, formatDate } from '@/lib/tokens';
-import { I18N } from '@/lib/i18n';
+import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
 import { ConstellationViz, OrbitalViz, GridViz, StarField, ElementOrb } from '@/components/primitives';
 import { AppHeader } from '@/components/chrome';
@@ -27,8 +27,10 @@ export default function DashboardScreen() {
   const [addOpen, setAddOpen] = useState(false);
   const [newUniverseOpen, setNewUniverseOpen] = useState(false);
   const universe = universes.find(u => u.id === activeUniverseId) || universes[0];
-  const network = universe ? [me, ...universe.members] : [me];
   const onSelectPerson = (id: string) => { if (id !== 'me') router.push(`/result/${id}`); };
+
+  if (!me) return null;
+  const network = universe ? [me, ...universe.members] : [me];
 
   return (
     <div style={{
@@ -37,14 +39,20 @@ export default function DashboardScreen() {
     }}>
       <StarField count={dark ? 80 : 30} seed={5} opacity={dark ? 0.65 : 0.15} />
       <div style={{ position: 'relative', height: '100%', overflow: 'auto', paddingBottom: 140 }}>
-        <div style={{ height: 54 }} />
+        <div style={{ height: 20 }} />
         <AppHeader />
         <div style={{ padding: '12px 22px 8px', animation: 'ctx-rise .45s ease both' }}>
           <div style={{
             fontSize: 26, fontWeight: 600, letterSpacing: -0.7, color: fg,
             lineHeight: 1.25, whiteSpace: 'pre-line',
           }}>
-            {lang === 'ko' ? '안녕,\n오늘의 결을 살펴볼까요' : 'Hello,\nshall we read today’s grain'}
+            {pick(lang, {
+              ko: '안녕,\n오늘의 결을 살펴볼까요',
+              en: 'Hello,\nshall we read today’s grain',
+              ja: 'こんにちは、\n今日の機微を見てみましょう',
+              zh: '你好，\n来看看今天的纹理吧',
+              es: 'Hola,\n¿leemos la textura de hoy?',
+            })}
           </div>
         </div>
         <TodaysFlowCard onPersonClick={onSelectPerson} />
@@ -62,10 +70,10 @@ export default function DashboardScreen() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase',
                           color: accent, fontWeight: 600 }}>
-              {lang === 'ko' ? '나의 기운' : 'My Aura'}
+              {t.myProfile}
             </div>
             <div style={{ fontSize: 16, fontWeight: 600, color: fg, letterSpacing: -0.4, marginTop: 2 }}>
-              {ELEMENTS[me.element].label_en}
+              {ELEMENTS[me.element].label[lang]}
             </div>
             <div style={{ fontSize: 12, color: sub, marginTop: 2, lineHeight: 1.4 }}>
               {t.elementWaterPoetic}
@@ -107,7 +115,7 @@ export default function DashboardScreen() {
                     background: active ? accent : (dark ? 'rgba(255,255,255,0.25)' : 'rgba(26,21,56,0.2)'),
                     boxShadow: active ? `0 0 8px ${accent}` : 'none',
                   }} />
-                  <span>{lang === 'ko' ? u.name_ko : u.name_en}</span>
+                  <span>{u.name_ko}</span>
                   <span style={{ fontSize: 11, color: active ? accent : sub,
                                  fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{u.members.length}</span>
                 </button>
@@ -123,15 +131,46 @@ export default function DashboardScreen() {
           </div>
           <div key={activeUniverseId} style={{ marginTop: 12, padding: '0 8px',
                                                 animation: 'ctx-fade .35s ease both' }}>
-            {vizStyle === 'constellation' && (
+            {universes.length === 0 && (
+              <div style={{
+                margin: '8px 8px 0', borderRadius: 22, padding: '28px 22px', textAlign: 'center',
+                background: dark
+                  ? 'linear-gradient(155deg, rgba(120,90,200,0.12), rgba(60,40,140,0.04))'
+                  : 'linear-gradient(155deg, rgba(255,255,255,0.7), rgba(240,233,255,0.5))',
+                border: `0.5px dashed ${dark ? 'rgba(255,255,255,0.16)' : 'rgba(26,21,56,0.14)'}`,
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: fg, letterSpacing: -0.3 }}>
+                  {pick(lang, {
+                    ko: '첫 우주를 만들어 보세요', en: 'Create your first universe',
+                    ja: '最初の宇宙をつくりましょう', zh: '创建你的第一个宇宙',
+                    es: 'Crea tu primer universo',
+                  })}
+                </div>
+                <div style={{ fontSize: 13, color: sub, marginTop: 6, lineHeight: 1.5 }}>
+                  {pick(lang, {
+                    ko: '가족, 친구, 직장 — 관계의 묶음에 이름을 붙이고 사람을 더해보세요.',
+                    en: 'Family, friends, work — name a circle and start adding people.',
+                    ja: '家族、友人、職場 — 関係のまとまりに名前をつけ、人を加えてみましょう。',
+                    zh: '家人、朋友、职场——为一组关系命名，然后开始添加人物。',
+                    es: 'Familia, amigos, trabajo: nombra un círculo y empieza a añadir personas.',
+                  })}
+                </div>
+                <button onClick={() => setNewUniverseOpen(true)} style={{
+                  marginTop: 14, minHeight: 44, padding: '0 22px', borderRadius: 22, border: 'none',
+                  background: `linear-gradient(135deg, ${accent}, ${accent})`, color: '#1A1538',
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: SANS,
+                }}>{t.addUniverse}</button>
+              </div>
+            )}
+            {universes.length > 0 && vizStyle === 'constellation' && (
               <ConstellationViz network={network} width={358} height={320}
                                 accent={accent} onSelect={onSelectPerson} lang={lang} />
             )}
-            {vizStyle === 'orbital' && (
+            {universes.length > 0 && vizStyle === 'orbital' && (
               <OrbitalViz network={network} width={358} height={320}
                           accent={accent} onSelect={onSelectPerson} lang={lang} />
             )}
-            {vizStyle === 'grid' && (
+            {universes.length > 0 && vizStyle === 'grid' && (
               <div style={{ padding: '12px 12px 0' }}>
                 <GridViz network={network} accent={accent} onSelect={onSelectPerson} lang={lang} />
               </div>

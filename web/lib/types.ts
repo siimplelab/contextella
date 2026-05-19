@@ -8,8 +8,7 @@ export interface Person {
   id: string;
   name_ko: string;
   name_en: string;
-  relation_ko?: string;
-  relation_en?: string;
+  relation?: string; // relation key: family | partner | friend | colleague | other
   element: ElementKey;
   birth: string;
   time: string | null;

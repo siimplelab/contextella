@@ -5,6 +5,14 @@ import { buildDayReport, dayHeadline, flowTone } from '@/lib/saju';
 import type { Lang, PersonWithFlow } from '@/lib/types';
 import { ElementOrb, StarField } from './primitives';
 import { useStore, accentHex } from '@/lib/store';
+import { pick } from '@/lib/i18n';
+
+const TONE_LABEL: Record<'bright' | 'steady' | 'soft' | 'careful', Record<Lang, string>> = {
+  bright: { ko: '맑음', en: 'bright', ja: '晴れ', zh: '晴朗', es: 'claro' },
+  steady: { ko: '평온', en: 'steady', ja: '穏やか', zh: '平稳', es: 'estable' },
+  soft: { ko: '잔잔', en: 'soft', ja: '静か', zh: '平静', es: 'suave' },
+  careful: { ko: '주의', en: 'careful', ja: '注意', zh: '留心', es: 'cautela' },
+};
 
 export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string) => void }) {
   const lang = useStore(s => s.lang);
@@ -12,7 +20,8 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
   const universes = useStore(s => s.universes);
   const accent = accentHex(useStore(s => s.tweaks.accent));
 
-  const report = useMemo(() => buildDayReport(universes), [universes, new Date().toDateString()]);
+  const today = new Date().toDateString();
+  const report = useMemo(() => buildDayReport(universes), [universes, today]);
   const headline = dayHeadline(report, lang);
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
@@ -56,9 +65,9 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
         position: 'relative',
       }}>
         {[
-          { label: lang === 'ko' ? '평균 결' : 'Avg flow', value: report.avg, color: flowTone(report.avg).color },
-          { label: lang === 'ko' ? '잘 맞아요' : 'In flow', value: report.bright.length, color: '#7BD89A' },
-          { label: lang === 'ko' ? '조심해요' : 'Tread soft', value: report.careful.length, color: '#E8A4B5' },
+          { label: pick(lang, { ko: '평균 결', en: 'Avg flow', ja: '平均の流れ', zh: '平均流动', es: 'Flujo medio' }), value: report.avg, color: flowTone(report.avg).color },
+          { label: pick(lang, { ko: '잘 맞아요', en: 'In flow', ja: 'よく合う', zh: '契合', es: 'En sintonía' }), value: report.bright.length, color: '#7BD89A' },
+          { label: pick(lang, { ko: '조심해요', en: 'Tread soft', ja: '慎重に', zh: '需留心', es: 'Con cuidado' }), value: report.careful.length, color: '#E8A4B5' },
         ].map((s, i) => (
           <div key={i} style={{
             background: dimBg,
@@ -79,7 +88,11 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
             <span style={{ width: 6, height: 6, borderRadius: 3, background: '#7BD89A' }} />
             <span style={{ fontSize: 11, color: sub, fontWeight: 600, letterSpacing: 1,
                            textTransform: 'uppercase', wordBreak: 'keep-all', whiteSpace: 'nowrap' }}>
-              {lang === 'ko' ? '오늘 잘 맞는 결' : 'Today’s bright currents'}
+              {pick(lang, {
+                ko: '오늘 잘 맞는 결', en: 'Today’s bright currents',
+                ja: '今日よく合う機微', zh: '今天契合的纹理',
+                es: 'Corrientes luminosas de hoy',
+              })}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -96,7 +109,11 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
             <span style={{ width: 6, height: 6, borderRadius: 3, background: '#E8A4B5' }} />
             <span style={{ fontSize: 11, color: sub, fontWeight: 600, letterSpacing: 1,
                            textTransform: 'uppercase' }}>
-              {lang === 'ko' ? '한 발 거리를 둘 결' : 'Step softly'}
+              {pick(lang, {
+                ko: '한 발 거리를 둘 결', en: 'Step softly',
+                ja: '一歩の距離を置く機微', zh: '宜留一步距离的纹理',
+                es: 'Pisar con suavidad',
+              })}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -139,10 +156,10 @@ export function FlowRow({ person, lang, dark, onClick }: { person: PersonWithFlo
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 14.5, fontWeight: 600, color: fg, letterSpacing: -0.3,
                          wordBreak: 'keep-all', whiteSpace: 'nowrap' }}>
-            {lang === 'ko' ? person.name_ko : person.name_en}
+            {person.name_ko}
           </span>
           <span style={{ fontSize: 11, color: sub, wordBreak: 'keep-all', whiteSpace: 'nowrap' }}>
-            · {lang === 'ko' ? person.universeName_ko : person.universeName_en}
+            · {person.universeName_ko}
           </span>
         </div>
         <div style={{
@@ -165,10 +182,7 @@ export function FlowRow({ person, lang, dark, onClick }: { person: PersonWithFlo
         </span>
         <span style={{ fontSize: 9.5, color: sub, marginTop: 3, letterSpacing: 0.5,
                        textTransform: 'uppercase', fontWeight: 600 }}>
-          {lang === 'ko'
-            ? (tone.tone === 'bright' ? '맑음' : tone.tone === 'steady' ? '평온'
-               : tone.tone === 'soft' ? '잔잔' : '주의')
-            : tone.tone}
+          {TONE_LABEL[tone.tone][lang]}
         </span>
       </div>
     </button>

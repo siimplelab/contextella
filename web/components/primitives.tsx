@@ -1,6 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { ELEMENTS } from '@/lib/tokens';
+import { relationLabel } from '@/lib/i18n';
 import type { ElementKey, Person, Lang } from '@/lib/types';
 
 export function ElementOrb({ element = 'water', size = 120, animated = true }: { element?: ElementKey; size?: number; animated?: boolean }) {
@@ -134,7 +135,7 @@ export function PersonNode({ person, x, y, size, isMe, selected, onClick, lang =
           fontSize: 11, color: 'rgba(255,255,255,0.85)',
           fontWeight: 500, whiteSpace: 'nowrap', letterSpacing: -0.2,
           textShadow: '0 1px 4px rgba(0,0,0,0.6)',
-        }}>{lang === 'ko' ? person.name_ko : person.name_en}</div>
+        }}>{person.name_ko}</div>
       )}
     </button>
   );
@@ -285,10 +286,10 @@ export function GridViz({ network, accent = '#E8D4A2', onSelect, selectedId, lan
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: -0.3 }}>
-                  {lang === 'ko' ? p.name_ko : p.name_en}
+                  {p.name_ko}
                 </div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>
-                  {lang === 'ko' ? p.relation_ko : p.relation_en}
+                  {relationLabel(p.relation, lang)}
                 </div>
               </div>
             </div>

@@ -1,9 +1,10 @@
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ELEMENTS, SANS, cosmicBg, formatDate, pillBtn } from '@/lib/tokens';
-import { I18N } from '@/lib/i18n';
+import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
+import { sajuFromBirth, compatibility, synergyConflict } from '@/lib/saju';
 import { CompatGauge, CompatStars, CompatMerge, StarField, ElementOrb } from '@/components/primitives';
 
 export default function ResultScreen({ personId }: { personId: string }) {
@@ -17,41 +18,58 @@ export default function ResultScreen({ personId }: { personId: string }) {
   const t = I18N[lang];
   const person = findPerson(personId);
 
-  if (!person) {
+  // Compatibility is computed locally from the Saju engine — no network needed.
+  const compat = useMemo(() => {
+    if (!me || !person) return null;
+    const a = sajuFromBirth(me.birth, me.time);
+    const b = sajuFromBirth(person.birth, person.time);
+    if (!a || !b) return null;
+    const { score, factors } = compatibility(a.pillars, b.pillars);
+    const { synergies, conflicts } = synergyConflict(factors, lang);
+    return { score, synergies, conflicts };
+  }, [me, person, lang]);
+
+  const fg = dark ? '#fff' : '#1A1538';
+  const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
+
+  if (!person || !me) {
     return (
-      <div style={{ padding: 40, color: '#fff', fontFamily: SANS, background: cosmicBg(dark), height: '100%' }}>
-        Person not found.
-        <button onClick={() => router.back()} style={{ marginLeft: 12, color: accent, background: 'transparent', border: 'none', cursor: 'pointer' }}>back</button>
+      <div style={{
+        width: '100%', height: '100%', background: cosmicBg(dark), color: fg,
+        fontFamily: SANS, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 16,
+      }}>
+        <div style={{ fontSize: 14, color: sub }}>
+          {pick(lang, {
+            ko: '이 사람을 찾을 수 없어요', en: 'This person could not be found',
+            ja: 'この人が見つかりません', zh: '找不到这个人',
+            es: 'No se encontró a esta persona',
+          })}
+        </div>
+        <button onClick={() => router.push('/')} style={{
+          ...pillBtn(dark), padding: '0 18px', color: accent,
+        }}>{pick(lang, { ko: '우주로', en: 'Universe', ja: '宇宙へ', zh: '前往宇宙', es: 'Al universo' })}</button>
       </div>
     );
   }
 
   const eMe = ELEMENTS[me.element];
   const eOther = ELEMENTS[person.element];
-  const score = person.score ?? 75;
-  const fg = dark ? '#fff' : '#1A1538';
-  const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
+  const score = compat?.score ?? 50;
+  const meetingTitle = pick(lang, {
+    ko: `${eMe.label.ko}과\n${eOther.label.ko}의 만남`,
+    en: `Where ${eMe.short.en.toLowerCase()}\nmeets ${eOther.short.en.toLowerCase()}`,
+    ja: `${eMe.short.ja}と${eOther.short.ja}の出会い`,
+    zh: `${eMe.short.zh}与${eOther.short.zh}的相遇`,
+    es: `Donde ${eMe.short.es.toLowerCase()}\nse encuentra con ${eOther.short.es.toLowerCase()}`,
+  });
   const cardBg = dark
     ? 'linear-gradient(155deg, rgba(120,90,200,0.14), rgba(60,40,140,0.05))'
     : 'linear-gradient(155deg, rgba(255,255,255,0.85), rgba(240,233,255,0.6))';
   const cardBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)';
 
-  const synergies = lang === 'ko' ? [
-    '깊은 직관과 따뜻한 추진력의 결합',
-    '서로의 침묵을 편안하게 해주는 결',
-    '함께 있을 때 새로운 길이 보입니다',
-  ] : [
-    'Deep intuition meets warm momentum',
-    'Both find ease in each other’s silence',
-    'New paths reveal themselves together',
-  ];
-  const conflicts = lang === 'ko' ? [
-    '결정의 속도가 서로 다를 수 있어요',
-    '감정이 가라앉을 때 함께 가라앉지 마세요',
-  ] : [
-    'You may move at different speeds',
-    'When one sinks, the other must stay afloat',
-  ];
+  const synergies = compat?.synergies ?? [];
+  const conflicts = compat?.conflicts ?? [];
 
   const stagger = (i: number): React.CSSProperties => ({ animation: `ctx-rise .5s cubic-bezier(.22,.7,.3,1) both ${0.05 + i * 0.07}s` });
 
@@ -62,14 +80,14 @@ export default function ResultScreen({ personId }: { personId: string }) {
     }}>
       <StarField count={dark ? 80 : 25} seed={9} opacity={dark ? 0.7 : 0.15} />
       <div style={{ position: 'relative', height: '100%', overflow: 'auto', paddingBottom: 60 }}>
-        <div style={{ height: 54 }} />
+        <div style={{ height: 20 }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '8px 20px', height: 44 }}>
           <button onClick={() => router.push('/')} style={{ ...pillBtn(dark), gap: 6, paddingRight: 16, color: fg }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>{lang === 'ko' ? '우주' : 'Universe'}</span>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>{pick(lang, { ko: '우주', en: 'Universe', ja: '宇宙', zh: '宇宙', es: 'Universo' })}</span>
           </button>
           <div style={{ fontSize: 13, color: sub, letterSpacing: 0.5, fontWeight: 500 }}>{t.resultTitle}</div>
           <div style={{ width: 44 }} />
@@ -77,13 +95,15 @@ export default function ResultScreen({ personId }: { personId: string }) {
 
         <div style={{ padding: '12px 20px 0', ...stagger(0) }}>
           <div style={{ fontSize: 12, color: accent, letterSpacing: 0.3, fontWeight: 600 }}>
-            {lang === 'ko' ? `나 · ${person.name_ko}` : `You · ${person.name_en}`}
+            {pick(lang, {
+              ko: `나 · ${person.name_ko}`, en: `You · ${person.name_ko}`,
+              ja: `私 · ${person.name_ko}`, zh: `我 · ${person.name_ko}`,
+              es: `Tú · ${person.name_ko}`,
+            })}
           </div>
           <div style={{ fontSize: 28, fontWeight: 600, color: fg, letterSpacing: -0.7,
                         marginTop: 6, lineHeight: 1.2, whiteSpace: 'pre-line' }}>
-            {lang === 'ko'
-              ? `${eMe.label_ko}과\n${eOther.label_ko}의 만남`
-              : `Where ${eMe.label_en.toLowerCase()}\nmeets ${eOther.label_en.toLowerCase()}`}
+            {meetingTitle}
           </div>
           <div style={{ fontSize: 14, color: sub, marginTop: 10, lineHeight: 1.5, letterSpacing: -0.2 }}>
             {t.poeticLead}
@@ -190,7 +210,11 @@ export default function ResultScreen({ personId }: { personId: string }) {
                   {t.weatherSunny}
                 </div>
                 <div style={{ fontSize: 12, color: sub, marginTop: 2 }}>
-                  {lang === 'ko' ? '대화가 잘 풀려요' : 'Words flow easily'}
+                  {pick(lang, {
+                    ko: '대화가 잘 풀려요', en: 'Words flow easily',
+                    ja: '会話がよく弾みます', zh: '对话顺畅自如',
+                    es: 'Las palabras fluyen con facilidad',
+                  })}
                 </div>
               </div>
             </div>
@@ -201,7 +225,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
             background: cardBg, border: `0.5px solid ${cardBorder}`, ...stagger(5),
           }}>
             <div style={{ fontSize: 11, color: sub, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }}>
-              {lang === 'ko' ? '두 기운' : 'Two energies'}
+              {pick(lang, { ko: '두 기운', en: 'Two energies', ja: '二つの気', zh: '两种气', es: 'Dos energías' })}
             </div>
             <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
               <ElementOrb element={me.element} size={36} animated />
@@ -209,9 +233,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
               <ElementOrb element={person.element} size={36} animated />
             </div>
             <div style={{ fontSize: 13, color: fg, marginTop: 10, letterSpacing: -0.2, lineHeight: 1.4 }}>
-              {lang === 'ko'
-                ? `${eMe.label_ko.replace(' 기운', '')} · ${eOther.label_ko.replace(' 기운', '')}`
-                : `${eMe.label_en} · ${eOther.label_en}`}
+              {`${eMe.short[lang]} · ${eOther.short[lang]}`}
             </div>
           </div>
 
@@ -224,9 +246,13 @@ export default function ResultScreen({ personId }: { personId: string }) {
             position: 'relative', overflow: 'hidden', ...stagger(6),
           }}>
             <div style={{ fontSize: 17, color: fg, lineHeight: 1.55, letterSpacing: -0.2, fontWeight: 500 }}>
-              {lang === 'ko'
-                ? '같은 하늘 아래, 서로 다른 시간을 흐르는 두 강. 오늘 잠시 같은 풍경을 비춥니다.'
-                : 'Two rivers beneath the same sky, flowing through different hours — today, briefly mirroring the same view.'}
+              {pick(lang, {
+                ko: '같은 하늘 아래, 서로 다른 시간을 흐르는 두 강. 오늘 잠시 같은 풍경을 비춥니다.',
+                en: 'Two rivers beneath the same sky, flowing through different hours — today, briefly mirroring the same view.',
+                ja: '同じ空の下、異なる時を流れる二つの川。今日、しばし同じ景色を映します。',
+                zh: '同一片天空下，流经不同时光的两条河。今天，短暂地映照出同样的风景。',
+                es: 'Dos ríos bajo el mismo cielo, fluyendo por horas distintas: hoy reflejan, por un instante, el mismo paisaje.',
+              })}
             </div>
             <div style={{ marginTop: 14, fontSize: 11, color: sub, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 600 }}>
               contextella · {formatDate(new Date(), lang)}

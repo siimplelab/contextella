@@ -14,14 +14,14 @@ export function BottomTabBar({ activeTab }: { activeTab: Tab }) {
   const lang = useStore(s => s.lang);
   const dim = dark ? 'rgba(255,255,255,0.45)' : 'rgba(26,21,56,0.45)';
 
-  const tabs: { id: Tab; ko: string; en: string; path: string; icon: React.ReactNode }[] = [
-    { id: 'home', ko: '홈', en: 'Home', path: '/',
+  const tabs: { id: Tab; label: Record<Lang, string>; path: string; icon: React.ReactNode }[] = [
+    { id: 'home', label: { ko: '홈', en: 'Home', ja: 'ホーム', zh: '主页', es: 'Inicio' }, path: '/',
       icon: <path d="M3 11l9-8 9 8v10a2 2 0 01-2 2h-4v-7h-6v7H5a2 2 0 01-2-2V11z" /> },
-    { id: 'rel', ko: '관계', en: 'Relations', path: '/relations',
+    { id: 'rel', label: { ko: '관계', en: 'Relations', ja: '関係', zh: '关系', es: 'Vínculos' }, path: '/relations',
       icon: <><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="11" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M15 20c0-2 1.3-4 4-4"/></> },
-    { id: 'today', ko: '오늘', en: 'Today', path: '/today',
+    { id: 'today', label: { ko: '오늘', en: 'Today', ja: '今日', zh: '今天', es: 'Hoy' }, path: '/today',
       icon: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></> },
-    { id: 'me', ko: '나', en: 'Me', path: '/me',
+    { id: 'me', label: { ko: '나', en: 'Me', ja: '私', zh: '我', es: 'Yo' }, path: '/me',
       icon: <><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></> },
   ];
 
@@ -57,7 +57,7 @@ export function BottomTabBar({ activeTab }: { activeTab: Tab }) {
               </svg>
               <span style={{ fontSize: 10, fontWeight: active ? 700 : 600, letterSpacing: 0.2,
                              whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>
-                {lang === 'ko' ? tab.ko : tab.en}
+                {tab.label[lang]}
               </span>
             </button>
           );
