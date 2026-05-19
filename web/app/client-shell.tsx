@@ -31,28 +31,36 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
   const dark = useStore(s => s.tweaks.darkMode);
   const hydrated = useStore(s => s.hydrated);
   const status = useStore(s => s.status);
+  const introSeen = useStore(s => s.introSeen);
   const init = useStore(s => s.init);
 
   const isAccountPage = ACCOUNT_PATHS.includes(pathname);
   const isOnboarding = pathname === '/onboarding';
+  const isWelcome = pathname === '/welcome';
+  // Pages that render their own UI without waiting for app data.
+  const isStandalone = isAccountPage || isOnboarding || isWelcome;
 
   // Load local data (and reconcile with the cloud) once the store has hydrated.
   useEffect(() => {
     if (hydrated && status === 'idle') init();
   }, [hydrated, status, init]);
 
-  // First-run onboarding gate — no account required.
+  // First-run gate: brand-new users see the welcome intro, then onboarding.
   useEffect(() => {
-    if (status === 'onboarding' && !isOnboarding && !isAccountPage) router.replace('/onboarding');
-    else if (status === 'ready' && isOnboarding) router.replace('/');
-  }, [status, isOnboarding, isAccountPage, router]);
+    if (status === 'onboarding') {
+      const target = introSeen ? '/onboarding' : '/welcome';
+      if (pathname !== target && !isAccountPage) router.replace(target);
+    } else if (status === 'ready' && (isOnboarding || isWelcome)) {
+      router.replace('/');
+    }
+  }, [status, introSeen, pathname, isAccountPage, isOnboarding, isWelcome, router]);
 
   if (!hydrated) {
     return <PhoneFrame dark><Loading dark /></PhoneFrame>;
   }
 
-  // Account pages and onboarding render their own UI immediately.
-  if (isAccountPage || isOnboarding) {
+  // Account, welcome and onboarding pages render their own UI immediately.
+  if (isStandalone) {
     return <PhoneFrame dark={dark}>{children}</PhoneFrame>;
   }
 

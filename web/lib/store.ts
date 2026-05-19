@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Lang, Person, Universe, AccentKey, ElementKey } from './types';
 import type { PillarView } from './saju/profile';
+import { parseBirthInput } from './saju/index';
 import { ACCENT_PALETTE } from './tokens';
 import {
   serializeMe,
@@ -49,6 +50,7 @@ interface State {
   lang: Lang;
   tweaks: Tweaks;
   hydrated: boolean;
+  introSeen: boolean; // first-run welcome intro completed
 
   // --- Raw app data (persisted locally; mirrored to cloud when signed in) ---
   profile: LocalProfile | null;
@@ -70,6 +72,7 @@ interface State {
   setLang: (l: Lang) => void;
   setTweak: <K extends keyof Tweaks>(k: K, v: Tweaks[K]) => void;
   markHydrated: () => void;
+  markIntroSeen: () => void;
 
   // --- Data actions ---
   init: () => Promise<void>;
@@ -85,12 +88,25 @@ interface State {
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+// Best-guess initial language from the browser; the persisted preference,
+// when present, overrides this on rehydration.
+function detectBrowserLang(): Lang {
+  if (typeof navigator === 'undefined') return 'en';
+  const l = (navigator.language || '').toLowerCase();
+  if (l.startsWith('ko')) return 'ko';
+  if (l.startsWith('ja')) return 'ja';
+  if (l.startsWith('zh')) return 'zh';
+  if (l.startsWith('es')) return 'es';
+  if (l.startsWith('en')) return 'en';
+  return 'en';
+}
 const localId = (p: string) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
-      lang: 'ko',
+      lang: detectBrowserLang(),
       tweaks: {
         vizStyle: 'constellation',
         gaugeStyle: 'gauge',
@@ -99,6 +115,7 @@ export const useStore = create<State>()(
         fontScale: 1,
       },
       hydrated: false,
+      introSeen: false,
 
       profile: null,
       rawUniverses: [],
@@ -116,11 +133,21 @@ export const useStore = create<State>()(
       setLang: (l) => set({ lang: l }),
       setTweak: (k, v) => set({ tweaks: { ...get().tweaks, [k]: v } }),
       markHydrated: () => set({ hydrated: true }),
+      markIntroSeen: () => set({ introSeen: true }),
 
       // Re-derive all enriched state (me, saju, universes) from raw local data.
       recompute: () => {
         const { profile, rawUniverses, activeUniverseId } = get();
-        if (!profile || !profile.birthDate) {
+        // The landing page is only reachable once every required field is
+        // present and the birth data actually parses — otherwise onboarding.
+        const complete = !!(
+          profile &&
+          profile.name &&
+          profile.gender &&
+          profile.birthDate &&
+          parseBirthInput(profile.birthDate, profile.birthTime)
+        );
+        if (!complete) {
           set({ status: 'onboarding', me: null, meSaju: null, universes: [] });
           return;
         }
@@ -248,6 +275,7 @@ export const useStore = create<State>()(
       partialize: (s) => ({
         lang: s.lang,
         tweaks: s.tweaks,
+        introSeen: s.introSeen,
         profile: s.profile,
         rawUniverses: s.rawUniverses,
         activeUniverseId: s.activeUniverseId,

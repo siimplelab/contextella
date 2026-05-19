@@ -83,14 +83,17 @@ export default function OnboardingScreen() {
   const storedProfile = useStore(s => s.profile);
   const t = COPY[lang];
 
+  // Prefill from any partial profile so a returning user keeps what they had.
+  const pb = (storedProfile?.birthDate ?? '').split('.');
+  const pt = (storedProfile?.birthTime ?? '').split(':');
   const [name, setName] = useState(storedProfile?.name ?? '');
-  const [year, setYear] = useState('');
-  const [month, setMonth] = useState('');
-  const [day, setDay] = useState('');
-  const [hour, setHour] = useState('');
-  const [min, setMin] = useState('');
-  const [unknown, setUnknown] = useState(false);
-  const [gender, setGender] = useState('o');
+  const [year, setYear] = useState(pb[0] ?? '');
+  const [month, setMonth] = useState(pb[1] ? String(+pb[1]) : '');
+  const [day, setDay] = useState(pb[2] ? String(+pb[2]) : '');
+  const [hour, setHour] = useState(pt[0] ?? '');
+  const [min, setMin] = useState(pt[1] ?? '');
+  const [unknown, setUnknown] = useState(!!storedProfile && !storedProfile.birthTime);
+  const [gender, setGender] = useState(storedProfile?.gender || 'o');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
