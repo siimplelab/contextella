@@ -1,6 +1,6 @@
 'use client';
 import React, { useMemo } from 'react';
-import { ELEMENTS, SANS, shade } from '@/lib/tokens';
+import { ELEMENTS, SANS, shade, accentInk } from '@/lib/tokens';
 import { buildDayReport, dayHeadline, flowTone } from '@/lib/saju';
 import type { Lang, PersonWithFlow } from '@/lib/types';
 import { ElementOrb, StarField } from './primitives';
@@ -19,6 +19,7 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
   const dark = useStore(s => s.tweaks.darkMode);
   const universes = useStore(s => s.universes);
   const accent = accentHex(useStore(s => s.tweaks.accent));
+  const ink = accentInk(accent, dark);
 
   const today = new Date().toDateString();
   const report = useMemo(() => buildDayReport(universes), [universes, today]);
@@ -45,7 +46,7 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
                     position: 'relative', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-                        color: accent, marginBottom: 6, fontWeight: 600 }}>
+                        color: ink, marginBottom: 6, fontWeight: 600 }}>
             {headline.eyebrow}
           </div>
           <div style={{ fontSize: 21, fontWeight: 600, color: fg, letterSpacing: -0.5,
@@ -65,7 +66,7 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
         position: 'relative',
       }}>
         {[
-          { label: pick(lang, { ko: '평균 결', en: 'Avg flow', ja: '平均の流れ', zh: '平均流动', es: 'Flujo medio' }), value: report.avg, color: flowTone(report.avg).color },
+          { label: pick(lang, { ko: '평균 결', en: 'Avg flow', ja: '平均の流れ', zh: '平均流动', es: 'Flujo medio' }), value: report.avg, color: flowTone(report.avg, dark).color },
           { label: pick(lang, { ko: '잘 맞아요', en: 'In flow', ja: 'よく合う', zh: '契合', es: 'En sintonía' }), value: report.bright.length, color: '#7BD89A' },
           { label: pick(lang, { ko: '조심해요', en: 'Tread soft', ja: '慎重に', zh: '需留心', es: 'Con cuidado' }), value: report.careful.length, color: '#E8A4B5' },
         ].map((s, i) => (
@@ -130,7 +131,7 @@ export function TodaysFlowCard({ onPersonClick }: { onPersonClick?: (id: string)
 export function FlowRow({ person, lang, dark, onClick }: { person: PersonWithFlow; lang: Lang; dark: boolean; onClick?: () => void }) {
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.55)' : 'rgba(26,21,56,0.55)';
-  const tone = flowTone(person.flow);
+  const tone = flowTone(person.flow, dark);
   const e = ELEMENTS[person.element];
 
   return (

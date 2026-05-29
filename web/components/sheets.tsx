@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { SANS, formatDate, shade } from '@/lib/tokens';
+import { SANS, formatDate, shade, accentInk } from '@/lib/tokens';
 import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
 
@@ -253,7 +253,7 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
             <div style={{ fontSize: 13, color: sub, letterSpacing: 0.2, fontWeight: 500 }}>{t.birthDate}</div>
-            <div style={{ fontSize: 12, color: accent, letterSpacing: -0.1 }}>{datePreview()}</div>
+            <div style={{ fontSize: 12, color: accentInk(accent, dark), letterSpacing: -0.1 }}>{datePreview()}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {numField(year, setYear, 9999, pick(lang, { ko: '연도', en: 'YYYY', ja: '年', zh: '年', es: 'AAAA' }))}

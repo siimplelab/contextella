@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, LANGS } from '@/lib/tokens';
+import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, LANGS, accentInk } from '@/lib/tokens';
 import { pick } from '@/lib/i18n';
 import type { ElementKey, Lang } from '@/lib/types';
 import { useStore, accentHex } from '@/lib/store';
@@ -64,7 +64,7 @@ export default function MeScreen() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}>
             <ElementOrb element={me.element} size={88} animated />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, color: accentInk(accent, dark), letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
                 {pick(lang, { ko: '본인', en: 'Self', ja: '本人', zh: '本人', es: 'Tú' })}
               </div>
               <div style={{ fontSize: 26, fontWeight: 600, color: fg, letterSpacing: -0.6, marginTop: 2 }}>
@@ -280,7 +280,7 @@ function CloudCard({ dark, accent, lang }: { dark: boolean; accent: string; lang
       margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
       background: cardBg, border: cardBorder,
     }}>
-      <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 11, color: accentInk(accent, dark), letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
         {pick(lang, { ko: '클라우드', en: 'Cloud', ja: 'クラウド', zh: '云端', es: 'Nube' })}
       </div>
       {cloudEmail ? (

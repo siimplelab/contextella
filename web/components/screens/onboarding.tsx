@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SANS, cosmicBg, shade, formatDate } from '@/lib/tokens';
+import { SANS, cosmicBg, shade, formatDate, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
 import { StarField, ElementOrb } from '@/components/primitives';
 import { LanguageMenu } from '@/components/chrome';
@@ -155,7 +155,7 @@ export default function OnboardingScreen() {
   const label = (text: string, extra?: string) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
       <span style={{ fontSize: 13, color: sub, fontWeight: 500, letterSpacing: 0.2 }}>{text}</span>
-      {extra && <span style={{ fontSize: 12, color: accent }}>{extra}</span>}
+      {extra && <span style={{ fontSize: 12, color: accentInk(accent, dark) }}>{extra}</span>}
     </div>
   );
 

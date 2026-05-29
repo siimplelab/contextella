@@ -192,7 +192,7 @@ export default function RelationsScreen() {
 function PersonRow({ p, lang, dark, onClick }: { p: PersonWithFlow; lang: Lang; dark: boolean; onClick: () => void }) {
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.55)' : 'rgba(26,21,56,0.55)';
-  const tone = flowTone(p.flow);
+  const tone = flowTone(p.flow, dark);
   const e = ELEMENTS[p.element];
   return (
     <button onClick={onClick} style={{

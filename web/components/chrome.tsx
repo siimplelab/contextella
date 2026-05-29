@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LANGS, SANS, pillBtn, shade } from '@/lib/tokens';
+import { LANGS, SANS, pillBtn, shade, accentInk } from '@/lib/tokens';
 import type { Lang } from '@/lib/types';
 import { useStore, accentHex } from '@/lib/store';
 
@@ -10,7 +10,7 @@ type Tab = 'home' | 'rel' | 'today' | 'me';
 export function BottomTabBar({ activeTab }: { activeTab: Tab }) {
   const router = useRouter();
   const dark = useStore(s => s.tweaks.darkMode);
-  const accent = accentHex(useStore(s => s.tweaks.accent));
+  const accent = accentInk(accentHex(useStore(s => s.tweaks.accent)), dark);
   const lang = useStore(s => s.lang);
   const dim = dark ? 'rgba(255,255,255,0.45)' : 'rgba(26,21,56,0.45)';
 
@@ -93,7 +93,7 @@ export function FloatingAddBtn({ onClick, label }: { onClick: () => void; label:
 export function LanguageMenu() {
   const [open, setOpen] = useState(false);
   const dark = useStore(s => s.tweaks.darkMode);
-  const accent = accentHex(useStore(s => s.tweaks.accent));
+  const accent = accentInk(accentHex(useStore(s => s.tweaks.accent)), dark);
   const lang = useStore(s => s.lang);
   const setLang = useStore(s => s.setLang);
   const fg = dark ? '#fff' : '#1A1538';
@@ -141,7 +141,7 @@ export function LanguageMenu() {
 
 export function AppHeader() {
   const dark = useStore(s => s.tweaks.darkMode);
-  const accent = accentHex(useStore(s => s.tweaks.accent));
+  const accent = accentInk(accentHex(useStore(s => s.tweaks.accent)), dark);
   const fg = dark ? '#fff' : '#1A1538';
   return (
     <div style={{ padding: '0 20px 4px', position: 'relative', fontFamily: SANS }}>
@@ -163,7 +163,7 @@ export function AppHeader() {
 
 export function ScreenHeader({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
   const dark = useStore(s => s.tweaks.darkMode);
-  const accent = accentHex(useStore(s => s.tweaks.accent));
+  const accent = accentInk(accentHex(useStore(s => s.tweaks.accent)), dark);
   const fg = dark ? '#fff' : '#1A1538';
   const subC = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
   return (

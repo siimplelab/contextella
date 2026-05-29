@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ELEMENTS, SANS, cosmicBg, formatDate } from '@/lib/tokens';
+import { ELEMENTS, SANS, cosmicBg, formatDate, accentInk } from '@/lib/tokens';
 import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
 import { ConstellationViz, OrbitalViz, GridViz, StarField, ElementOrb } from '@/components/primitives';
@@ -15,6 +15,7 @@ export default function DashboardScreen() {
   const lang = useStore(s => s.lang);
   const dark = useStore(s => s.tweaks.darkMode);
   const accent = accentHex(useStore(s => s.tweaks.accent));
+  const ink = accentInk(accent, dark);
   const vizStyle = useStore(s => s.tweaks.vizStyle);
   const universes = useStore(s => s.universes);
   const me = useStore(s => s.me);
@@ -69,7 +70,7 @@ export default function DashboardScreen() {
           <ElementOrb element={me.element} size={48} animated />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase',
-                          color: accent, fontWeight: 600 }}>
+                          color: ink, fontWeight: 600 }}>
               {t.myProfile}
             </div>
             <div style={{ fontSize: 16, fontWeight: 600, color: fg, letterSpacing: -0.4, marginTop: 2 }}>
@@ -91,7 +92,7 @@ export default function DashboardScreen() {
                 {t.myUniverseSub(universe?.members.length || 0)}
               </div>
             </div>
-            <div style={{ fontSize: 12, color: accent, letterSpacing: 0.3, fontWeight: 500 }}>
+            <div style={{ fontSize: 12, color: ink, letterSpacing: 0.3, fontWeight: 500 }}>
               {formatDate(new Date(), lang)}
             </div>
           </div>
@@ -116,7 +117,7 @@ export default function DashboardScreen() {
                     boxShadow: active ? `0 0 8px ${accent}` : 'none',
                   }} />
                   <span>{u.name_ko}</span>
-                  <span style={{ fontSize: 11, color: active ? accent : sub,
+                  <span style={{ fontSize: 11, color: active ? ink : sub,
                                  fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{u.members.length}</span>
                 </button>
               );
@@ -172,7 +173,7 @@ export default function DashboardScreen() {
             )}
             {universes.length > 0 && vizStyle === 'grid' && (
               <div style={{ padding: '12px 12px 0' }}>
-                <GridViz network={network} accent={accent} onSelect={onSelectPerson} lang={lang} />
+                <GridViz network={network} accent={accent} onSelect={onSelectPerson} lang={lang} dark={dark} />
               </div>
             )}
           </div>

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { SANS, cosmicBg, shade } from '@/lib/tokens';
+import { SANS, cosmicBg, shade, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
 import { StarField, ElementOrb } from '@/components/primitives';
 import { pick } from '@/lib/i18n';
@@ -136,7 +136,7 @@ export default function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 22 }}>
           <ElementOrb element="water" size={72} animated />
           <div style={{ fontSize: 13, letterSpacing: 3, textTransform: 'uppercase',
-                        color: accent, fontWeight: 600, marginTop: 14 }}>
+                        color: accentInk(accent, dark), fontWeight: 600, marginTop: 14 }}>
             contextella
           </div>
           <div style={{ fontSize: 23, fontWeight: 600, color: fg, letterSpacing: -0.5, marginTop: 8, textAlign: 'center' }}>
@@ -180,7 +180,7 @@ export default function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
           {m.alt}{' '}
           <button onClick={() => router.push(mode === 'login' ? '/register' : '/login')} style={{
             background: 'transparent', border: 'none', cursor: 'pointer',
-            color: accent, fontSize: 13.5, fontWeight: 600, fontFamily: SANS,
+            color: accentInk(accent, dark), fontSize: 13.5, fontWeight: 600, fontFamily: SANS,
           }}>{m.altLink}</button>
         </div>
       </div>
