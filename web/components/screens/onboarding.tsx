@@ -6,6 +6,7 @@ import { useStore, accentHex } from '@/lib/store';
 import { StarField, ElementOrb } from '@/components/primitives';
 import { LanguageMenu } from '@/components/chrome';
 import { pick } from '@/lib/i18n';
+import { daysInMonth } from '@/lib/saju';
 import type { Lang } from '@/lib/types';
 
 interface OnboardCopy {
@@ -126,7 +127,7 @@ export default function OnboardingScreen() {
     if (busy) return;
     setError('');
     const y = +year, m = +month, d = +day;
-    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > 31) {
+    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > daysInMonth(y, m)) {
       setError(pick(lang, {
         ko: '생년월일을 확인해 주세요', en: 'Check your date of birth',
         ja: '生年月日を確認してください', zh: '请检查出生日期', es: 'Revisa tu fecha de nacimiento',
