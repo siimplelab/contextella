@@ -25,6 +25,11 @@ export interface FourPillars {
   hour: Pillar | null; // null when birth time is unknown
 }
 
+// Days in a given civil month (1-based month). Handles leap Februaries.
+export function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
 // Parse stored birth strings: date "1993.06.14", time "23:40" | null.
 export function parseBirthInput(birth: string, time: string | null): BirthInput | null {
   const dm = birth.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})$/);
@@ -32,7 +37,9 @@ export function parseBirthInput(birth: string, time: string | null): BirthInput 
   const year = +dm[1];
   const month = +dm[2];
   const day = +dm[3];
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  // Reject impossible calendar dates (e.g. 2-30, 4-31) so we never silently
+  // roll over into a neighbouring day and emit the wrong pillar.
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return null;
   let hour: number | null = null;
   let minute: number | null = null;
   if (time) {

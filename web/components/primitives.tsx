@@ -1,6 +1,6 @@
 'use client';
 import React, { useMemo } from 'react';
-import { ELEMENTS } from '@/lib/tokens';
+import { ELEMENTS, accentInk } from '@/lib/tokens';
 import { relationLabel } from '@/lib/i18n';
 import type { ElementKey, Person, Lang } from '@/lib/types';
 
@@ -86,6 +86,7 @@ interface VizProps {
   onSelect?: (id: string) => void;
   selectedId?: string | null;
   lang?: Lang;
+  dark?: boolean;
 }
 
 export function PersonNode({ person, x, y, size, isMe, selected, onClick, lang = 'ko' }:
@@ -149,10 +150,19 @@ export function ConstellationViz({ network, width = 360, height = 320, accent = 
 
   const positions = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = { me: { x: cx, y: cy } };
-    others.forEach((p) => {
-      const angle = ((p.angle ?? 0) * Math.PI) / 180;
-      const r = maxR * (p.distance ?? 0.6);
-      map[p.id] = { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+    const n = others.length;
+    // Spread members evenly so nodes never collide, then keep a gentle Saju-based
+    // jitter so each chart still feels personal. Radius encodes the bond: a
+    // stronger score sits closer to "me". A floor keeps everyone clear of the orb.
+    const minR = 86, outerR = maxR * 0.9;
+    const ordered = [...others].sort((a, b) => (a.angle ?? 0) - (b.angle ?? 0));
+    ordered.forEach((p, i) => {
+      const base = (i / Math.max(1, n)) * Math.PI * 2 - Math.PI / 2;
+      const jitter = (((p.angle ?? 0) % 22) - 11) * (Math.PI / 180);
+      const a = base + jitter;
+      const norm = Math.max(0, Math.min(1, ((p.score ?? 60) - 40) / 55));
+      const r = minR + (1 - norm) * (outerR - minR);
+      map[p.id] = { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
     });
     return map;
   }, [network, width, height]);
@@ -213,7 +223,7 @@ export function OrbitalViz({ network, width = 360, height = 320, accent = '#E8D4
   const others = network.filter(p => p.id !== 'me');
   const maxR = Math.min(width, height) * 0.42;
   const ring = (score: number) => score >= 80 ? 0 : score >= 65 ? 1 : 2;
-  const ringR = [maxR * 0.42, maxR * 0.72, maxR * 1.0];
+  const ringR = [maxR * 0.6, maxR * 0.82, maxR * 1.0];
 
   const positions = useMemo(() => {
     const buckets: Person[][] = [[], [], []];
@@ -256,8 +266,9 @@ export function OrbitalViz({ network, width = 360, height = 320, accent = '#E8D4
   );
 }
 
-export function GridViz({ network, accent = '#E8D4A2', onSelect, selectedId, lang = 'ko' }: VizProps) {
+export function GridViz({ network, accent = '#E8D4A2', onSelect, selectedId, lang = 'ko', dark = true }: VizProps) {
   const others = network.filter(p => p.id !== 'me');
+  const ink = accentInk(accent, dark);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 4px' }}>
       {others.map(p => {
@@ -294,7 +305,7 @@ export function GridViz({ network, accent = '#E8D4A2', onSelect, selectedId, lan
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 'auto' }}>
-              <span style={{ fontSize: 22, fontWeight: 600, color: accent,
+              <span style={{ fontSize: 22, fontWeight: 600, color: ink,
                              fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5 }}>
                 {p.score}
               </span>
@@ -307,7 +318,7 @@ export function GridViz({ network, accent = '#E8D4A2', onSelect, selectedId, lan
   );
 }
 
-export function CompatGauge({ score = 75, size = 200, accent = '#E8D4A2', label = '' }: { score?: number; size?: number; accent?: string; label?: string }) {
+export function CompatGauge({ score = 75, size = 200, accent = '#E8D4A2', label = '', dark = true }: { score?: number; size?: number; accent?: string; label?: string; dark?: boolean }) {
   const stroke = 10;
   const r = (size - stroke) / 2;
   const cx = size / 2, cy = size / 2;
@@ -344,13 +355,13 @@ export function CompatGauge({ score = 75, size = 200, accent = '#E8D4A2', label 
           letterSpacing: -2, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
         }}>{score}</div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5, textTransform: 'uppercase' }}>/ 100</div>
-        {label && <div style={{ fontSize: 13, color: accent, marginTop: 6, letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
+        {label && <div style={{ fontSize: 13, color: accentInk(accent, dark), marginTop: 6, letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
       </div>
     </div>
   );
 }
 
-export function CompatStars({ score = 75, accent = '#E8D4A2', label = '', size = 200 }: { score?: number; accent?: string; label?: string; size?: number }) {
+export function CompatStars({ score = 75, accent = '#E8D4A2', label = '', size = 200, dark = true }: { score?: number; accent?: string; label?: string; size?: number; dark?: boolean }) {
   const filled = score / 20;
   return (
     <div style={{
@@ -378,13 +389,13 @@ export function CompatStars({ score = 75, accent = '#E8D4A2', label = '', size =
           );
         })}
       </div>
-      {label && <div style={{ fontSize: 13, color: accent, letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
+      {label && <div style={{ fontSize: 13, color: accentInk(accent, dark), letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
     </div>
   );
 }
 
-export function CompatMerge({ score = 75, accent = '#E8D4A2', label = '', size = 200, elementA = 'water', elementB = 'fire' }:
-  { score?: number; accent?: string; label?: string; size?: number; elementA?: ElementKey; elementB?: ElementKey }) {
+export function CompatMerge({ score = 75, accent = '#E8D4A2', label = '', size = 200, elementA = 'water', elementB = 'fire', dark = true }:
+  { score?: number; accent?: string; label?: string; size?: number; elementA?: ElementKey; elementB?: ElementKey; dark?: boolean }) {
   const eA = ELEMENTS[elementA], eB = ELEMENTS[elementB];
   const overlap = (score / 100) * 32;
   return (
@@ -412,7 +423,7 @@ export function CompatMerge({ score = 75, accent = '#E8D4A2', label = '', size =
         fontSize: 36, fontWeight: 300, color: '#fff',
         letterSpacing: -1.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1, marginTop: 4,
       }}>{score}<span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>/100</span></div>
-      {label && <div style={{ fontSize: 13, color: accent, letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
+      {label && <div style={{ fontSize: 13, color: accentInk(accent, dark), letterSpacing: -0.2, fontWeight: 500 }}>{label}</div>}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import { SANS, formatDate, shade } from '@/lib/tokens';
+import { SANS, formatDate, shade, accentInk } from '@/lib/tokens';
 import { I18N, pick } from '@/lib/i18n';
+import { daysInMonth } from '@/lib/saju';
 import { useStore, accentHex } from '@/lib/store';
 
 export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved?: (id: string) => void }) {
@@ -48,7 +49,7 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
       }));
       return;
     }
-    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > 31) {
+    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > daysInMonth(y, m)) {
       setError(pick(lang, {
         ko: '생년월일을 확인해 주세요', en: 'Check the date of birth',
         ja: '生年月日を確認してください', zh: '请检查出生日期', es: 'Revisa la fecha de nacimiento',
@@ -253,7 +254,7 @@ export function AddPersonSheet({ open, onClose, onSaved }: { open: boolean; onCl
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
             <div style={{ fontSize: 13, color: sub, letterSpacing: 0.2, fontWeight: 500 }}>{t.birthDate}</div>
-            <div style={{ fontSize: 12, color: accent, letterSpacing: -0.1 }}>{datePreview()}</div>
+            <div style={{ fontSize: 12, color: accentInk(accent, dark), letterSpacing: -0.1 }}>{datePreview()}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {numField(year, setYear, 9999, pick(lang, { ko: '연도', en: 'YYYY', ja: '年', zh: '年', es: 'AAAA' }))}

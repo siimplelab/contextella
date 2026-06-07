@@ -1,5 +1,5 @@
 import type { ElementKey, Lang, Person, PersonWithFlow, DayReport, Universe } from './types';
-import { ELEMENTS } from './tokens';
+import { ELEMENTS, accentInk } from './tokens';
 import { sajuFromBirth, dayPillarOf, dayElementOf, dailyFlow } from './saju/index';
 export * from './saju/index';
 
@@ -25,11 +25,14 @@ export function flowFor(person: Person): number {
 
 export interface FlowTone { tone: 'bright' | 'steady' | 'soft' | 'careful'; color: string; bg: string }
 
-export function flowTone(score: number): FlowTone {
-  if (score >= 78) return { tone: 'bright', color: '#7BD89A',  bg: 'rgba(123,216,154,0.14)' };
-  if (score >= 62) return { tone: 'steady', color: '#C9A8E8',  bg: 'rgba(201,168,232,0.14)' };
-  if (score >= 48) return { tone: 'soft',   color: '#E8D4A2',  bg: 'rgba(232,212,162,0.14)' };
-  return            { tone: 'careful',color: '#E8A4B5', bg: 'rgba(232,164,181,0.14)' };
+// `dark` darkens the pastel tone so the score stays legible on the light theme.
+export function flowTone(score: number, dark = true): FlowTone {
+  const t: FlowTone =
+    score >= 78 ? { tone: 'bright', color: '#7BD89A',  bg: 'rgba(123,216,154,0.14)' }
+    : score >= 62 ? { tone: 'steady', color: '#C9A8E8',  bg: 'rgba(201,168,232,0.14)' }
+    : score >= 48 ? { tone: 'soft',   color: '#E8D4A2',  bg: 'rgba(232,212,162,0.14)' }
+    :               { tone: 'careful',color: '#E8A4B5', bg: 'rgba(232,164,181,0.14)' };
+  return dark ? t : { ...t, color: accentInk(t.color, false) };
 }
 
 export function buildDayReport(universes: Universe[]): DayReport {

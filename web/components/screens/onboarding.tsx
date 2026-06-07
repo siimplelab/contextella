@@ -1,11 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SANS, cosmicBg, shade, formatDate } from '@/lib/tokens';
+import { SANS, cosmicBg, shade, formatDate, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
 import { StarField, ElementOrb } from '@/components/primitives';
 import { LanguageMenu } from '@/components/chrome';
 import { pick } from '@/lib/i18n';
+import { daysInMonth } from '@/lib/saju';
 import type { Lang } from '@/lib/types';
 
 interface OnboardCopy {
@@ -126,7 +127,7 @@ export default function OnboardingScreen() {
     if (busy) return;
     setError('');
     const y = +year, m = +month, d = +day;
-    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > 31) {
+    if (!y || y < 1900 || y > 2100 || !m || m > 12 || !d || d > daysInMonth(y, m)) {
       setError(pick(lang, {
         ko: '생년월일을 확인해 주세요', en: 'Check your date of birth',
         ja: '生年月日を確認してください', zh: '请检查出生日期', es: 'Revisa tu fecha de nacimiento',
@@ -155,7 +156,7 @@ export default function OnboardingScreen() {
   const label = (text: string, extra?: string) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
       <span style={{ fontSize: 13, color: sub, fontWeight: 500, letterSpacing: 0.2 }}>{text}</span>
-      {extra && <span style={{ fontSize: 12, color: accent }}>{extra}</span>}
+      {extra && <span style={{ fontSize: 12, color: accentInk(accent, dark) }}>{extra}</span>}
     </div>
   );
 

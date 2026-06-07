@@ -75,6 +75,19 @@ export function shade(hex: string, pct: number): string {
   return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
+// Accent colours are tuned for the dark cosmos. On the light theme the same
+// bright champagne/gold reads as low-contrast wash, so darken it (preserving
+// hue) whenever it is used as *text* on a light surface.
+export function accentInk(hex: string, dark: boolean): string {
+  if (dark) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const f = 0.5;
+  const r = Math.round(((n >> 16) & 0xff) * f);
+  const g = Math.round(((n >> 8) & 0xff) * f);
+  const b = Math.round((n & 0xff) * f);
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
 export const cosmicBg = (dark: boolean) => dark
   ? 'radial-gradient(ellipse 90% 60% at 50% 0%, #2A1F5E 0%, #16103A 38%, #0B0824 78%, #050415 100%)'
   : 'radial-gradient(ellipse 90% 60% at 50% 0%, #F0E9FF 0%, #E1D6F8 38%, #D6C7EC 78%, #C9B6E0 100%)';

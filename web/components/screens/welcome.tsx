@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SANS, cosmicBg, shade, LANGS } from '@/lib/tokens';
+import { SANS, cosmicBg, shade, LANGS, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
 import { StarField, ElementOrb } from '@/components/primitives';
 import type { Lang, ElementKey } from '@/lib/types';
@@ -175,7 +175,7 @@ export default function WelcomeScreen() {
                       cursor: 'pointer', fontFamily: SANS, transition: 'all .15s',
                     }}>
                       <span>{l.label}</span>
-                      {active && <span style={{ color: accent, fontSize: 15 }}>✓</span>}
+                      {active && <span style={{ color: accentInk(accent, dark), fontSize: 15 }}>✓</span>}
                     </button>
                   );
                 })}

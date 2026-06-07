@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, LANGS } from '@/lib/tokens';
+import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, LANGS, accentInk } from '@/lib/tokens';
 import { pick } from '@/lib/i18n';
 import type { ElementKey, Lang } from '@/lib/types';
 import { useStore, accentHex } from '@/lib/store';
@@ -64,7 +64,7 @@ export default function MeScreen() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}>
             <ElementOrb element={me.element} size={88} animated />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, color: accentInk(accent, dark), letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
                 {pick(lang, { ko: '본인', en: 'Self', ja: '本人', zh: '本人', es: 'Tú' })}
               </div>
               <div style={{ fontSize: 26, fontWeight: 600, color: fg, letterSpacing: -0.6, marginTop: 2 }}>
@@ -168,6 +168,59 @@ export default function MeScreen() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        <div style={{
+          margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
+          background: cardBg, border: cardBorder,
+          animation: 'ctx-rise .5s ease both .12s',
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>
+            {pick(lang, {
+              ko: '이렇게 계산해요', en: 'How this is calculated',
+              ja: 'こうして計算しています', zh: '我们如何计算',
+              es: 'Cómo se calcula',
+            })}
+          </div>
+          <div style={{ fontSize: 12.5, color: sub, lineHeight: 1.5, marginTop: 6 }}>
+            {pick(lang, {
+              ko: '무작위 점괘가 아니라, 천문 계산과 검증된 만세력으로 사주를 세웁니다.',
+              en: 'Not a random draw — your chart is built from astronomy and a verified perpetual calendar (만세력).',
+              ja: 'ランダムな占いではなく、天文計算と検証済みの万歳暦で四柱を立てます。',
+              zh: '并非随机抽签——你的命盘由天文计算与经过验证的万年历推得。',
+              es: 'No es un sorteo al azar: tu carta se construye con astronomía y un calendario perpetuo verificado.',
+            })}
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              pick(lang, {
+                ko: '연주 — 양력 새해가 아닌 입춘을 기준으로 바뀜',
+                en: 'Year — turns at 입춘 (early Feb), not Jan 1',
+                ja: '年柱 — 元日ではなく立春を基準に',
+                zh: '年柱 — 以立春为界，而非元旦',
+                es: 'Año — cambia en 입춘 (inicios de feb.), no el 1 de enero',
+              }),
+              pick(lang, {
+                ko: '월주·일주 — 실제 절기와 만세력 60갑자로 계산',
+                en: 'Month & day — real solar terms and the 60갑자 manse cycle',
+                ja: '月柱・日柱 — 実際の節気と万歳暦の60干支で',
+                zh: '月柱·日柱 — 依实际节气与六十甲子万年历',
+                es: 'Mes y día — términos solares reales y el ciclo 60갑자',
+              }),
+              pick(lang, {
+                ko: '한국 표준시(KST) 기준 · 시간을 모르면 시주는 비워둠',
+                en: 'All times in KST · hour pillar omitted if unknown',
+                ja: '韓国標準時(KST)基準 · 時刻不明なら時柱は省略',
+                zh: '均以韩国标准时(KST)为准 · 不知时辰则留空时柱',
+                es: 'Horas en KST · sin hora, se omite el pilar horario',
+              }),
+            ].map((line, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <span style={{ color: accentInk(accent, dark), fontSize: 12, lineHeight: 1.5, flexShrink: 0 }}>✦</span>
+                <span style={{ fontSize: 12.5, color: sub, lineHeight: 1.5, letterSpacing: -0.1 }}>{line}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -280,7 +333,7 @@ function CloudCard({ dark, accent, lang }: { dark: boolean; accent: string; lang
       margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
       background: cardBg, border: cardBorder,
     }}>
-      <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 11, color: accentInk(accent, dark), letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
         {pick(lang, { ko: '클라우드', en: 'Cloud', ja: 'クラウド', zh: '云端', es: 'Nube' })}
       </div>
       {cloudEmail ? (

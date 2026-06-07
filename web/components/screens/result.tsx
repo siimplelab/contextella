@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ELEMENTS, SANS, cosmicBg, formatDate, pillBtn } from '@/lib/tokens';
+import { ELEMENTS, SANS, cosmicBg, formatDate, pillBtn, accentInk } from '@/lib/tokens';
 import { I18N, pick } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
 import { sajuFromBirth, compatibility, synergyConflict } from '@/lib/saju';
@@ -47,7 +47,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
           })}
         </div>
         <button onClick={() => router.push('/')} style={{
-          ...pillBtn(dark), padding: '0 18px', color: accent,
+          ...pillBtn(dark), padding: '0 18px', color: accentInk(accent, dark),
         }}>{pick(lang, { ko: '우주로', en: 'Universe', ja: '宇宙へ', zh: '前往宇宙', es: 'Al universo' })}</button>
       </div>
     );
@@ -94,7 +94,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
         </div>
 
         <div style={{ padding: '12px 20px 0', ...stagger(0) }}>
-          <div style={{ fontSize: 12, color: accent, letterSpacing: 0.3, fontWeight: 600 }}>
+          <div style={{ fontSize: 12, color: accentInk(accent, dark), letterSpacing: 0.3, fontWeight: 600 }}>
             {pick(lang, {
               ko: `나 · ${person.name_ko}`, en: `You · ${person.name_ko}`,
               ja: `私 · ${person.name_ko}`, zh: `我 · ${person.name_ko}`,
@@ -118,16 +118,16 @@ export default function ResultScreen({ personId }: { personId: string }) {
           ...stagger(1),
         }}>
           <div style={{ fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-                        color: accent, fontWeight: 600, marginBottom: 14 }}>{t.compatScore}</div>
+                        color: accentInk(accent, dark), fontWeight: 600, marginBottom: 14 }}>{t.compatScore}</div>
           {gaugeStyle === 'gauge' && (
-            <CompatGauge score={score} accent={accent} label={t.compatLabel(score)} size={200} />
+            <CompatGauge score={score} accent={accent} label={t.compatLabel(score)} size={200} dark={dark} />
           )}
           {gaugeStyle === 'stars' && (
-            <CompatStars score={score} accent={accent} label={t.compatLabel(score)} size={200} />
+            <CompatStars score={score} accent={accent} label={t.compatLabel(score)} size={200} dark={dark} />
           )}
           {gaugeStyle === 'merge' && (
             <CompatMerge score={score} accent={accent} label={t.compatLabel(score)} size={200}
-                         elementA={me.element} elementB={person.element} />
+                         elementA={me.element} elementB={person.element} dark={dark} />
           )}
         </div>
 
@@ -139,7 +139,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <span style={{
                 width: 28, height: 28, borderRadius: 14,
-                background: `${accent}33`, color: accent,
+                background: `${accent}33`, color: accentInk(accent, dark),
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
               }}>✦</span>
               <span style={{ fontSize: 15, fontWeight: 600, color: fg, letterSpacing: -0.3 }}>
@@ -151,7 +151,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
                 display: 'flex', gap: 10, padding: '8px 0', alignItems: 'flex-start',
                 borderTop: i > 0 ? `0.5px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(26,21,56,0.06)'}` : 'none',
               }}>
-                <span style={{ fontSize: 13, color: accent, fontVariantNumeric: 'tabular-nums', minWidth: 18, paddingTop: 2 }}>
+                <span style={{ fontSize: 13, color: accentInk(accent, dark), fontVariantNumeric: 'tabular-nums', minWidth: 18, paddingTop: 2 }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span style={{ fontSize: 14, color: fg, lineHeight: 1.5, letterSpacing: -0.2 }}>{s}</span>

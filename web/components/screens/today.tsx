@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { SANS, cosmicBg, formatDate } from '@/lib/tokens';
+import { SANS, cosmicBg, formatDate, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
 import { buildDayReport, dayHeadline, dailyAdvice, peakHourOf, dayPillarOf } from '@/lib/saju';
 import { ElementOrb, StarField } from '@/components/primitives';
@@ -23,6 +23,7 @@ export default function TodayScreen() {
   const lang = useStore(s => s.lang);
   const dark = useStore(s => s.tweaks.darkMode);
   const accent = accentHex(useStore(s => s.tweaks.accent));
+  const ink = accentInk(accent, dark);
   const universes = useStore(s => s.universes);
 
   const today = new Date();
@@ -77,7 +78,7 @@ export default function TodayScreen() {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, position: 'relative' }}>
             <ElementOrb element={report.dayElement} size={84} animated />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, letterSpacing: 1.4, color: accent,
+              <div style={{ fontSize: 11, letterSpacing: 1.4, color: ink,
                             textTransform: 'uppercase', fontWeight: 600 }}>
                 {headline.eyebrow}
               </div>
@@ -168,7 +169,7 @@ export default function TodayScreen() {
           border: cardBorder,
           animation: 'ctx-rise .5s ease both .2s',
         }}>
-          <div style={{ fontSize: 11, color: accent, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 11, color: ink, letterSpacing: 1.4, fontWeight: 600, textTransform: 'uppercase' }}>
             {pick(lang, {
               ko: '오늘의 결을 다듬는 법', en: 'Tune today’s grain',
               ja: '今日の機微を整える', zh: '调理今日的纹理',
@@ -184,7 +185,7 @@ export default function TodayScreen() {
                 <span style={{
                   width: 22, height: 22, borderRadius: 11, flexShrink: 0,
                   background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)',
-                  color: accent, fontSize: 11, fontWeight: 600,
+                  color: ink, fontSize: 11, fontWeight: 600,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontVariantNumeric: 'tabular-nums',
                 }}>{i + 1}</span>
