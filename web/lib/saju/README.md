@@ -162,6 +162,58 @@ The matching factors are turned into human prose by `synergyConflict`, which
 maps each factor id to a localized phrase, orders them by weight, and falls back
 to a gentle default when a chart is quiet.
 
+### Detailed 궁합 (`compat-detail.ts`)
+
+`compatDetail(a, b)` unfolds the single score into the layers a reader actually
+weighs, so the relationship can be read, not just rated:
+
+- **Four scored dimensions** (0–100) — 일간 조화 (day-master 상생/상극/비화),
+  일지 인연 (the day-branch bond, the intimate axis), 오행 보완 (how well each
+  fills the other's elemental gaps), and 용신 교류 (whether each chart is rich in
+  the element the *other* most needs — a sophisticated, conventional measure).
+- **기둥별 인연** — the branch relation at every pillar (육합·삼합·충·형·해 or
+  neutral), so harmony and friction can be located, not just totalled.
+- **관계 신살** — relationship stars read between the two day branches:
+  천생연분(육합), 삼합, 애증(충), 원진살, and 도화 교류.
+
+All deterministic and symmetric in the same spirit as the score itself, and
+covered by [`__tests__/compat-detail.test.ts`](./__tests__/compat-detail.test.ts).
+
+---
+
+## 6.5 In-depth reading (`analysis.ts`)
+
+`inDepthReading(pillars)` assembles the deeper, single-person reading that the
+detail page shows — the same conventional 명리학 layers the popular reading
+services compute, applied deterministically:
+
+- **십신 (Ten Gods)** — `tenGodOf(dayStem, otherStem)` classifies any stem's
+  relation to the day master by element cycle **and** matching/opposing polarity,
+  yielding one of the ten names (비견·겁재·식신·상관·편재·정재·편관·정관·편인·정인).
+- **신강·신약 (body strength)** — `dayStrength` uses the **억부(抑扶)** method:
+  every stem and hidden stem is weighed as either *supporting* the day master
+  (비겁 + 인성) or *draining* it (식상 + 재성 + 관성). The month branch (월령)
+  carries the most weight, the day branch next. The support share maps to one of
+  극신약 / 신약 / 중화 / 신강 / 극신강. `rootedInMonth` is 득령.
+- **용신 (favorable element)** — `usefulGods` follows 억부용신: a strong chart
+  favours the draining elements, a weak one the supporting elements; the single
+  most-needed (least present) favorable element is the 용신, which
+  `ELEMENT_REMEDY` translates into colour / direction / season cues.
+- **격국 (structure)** — `chartPattern` names the chart for the ten god of the
+  **month branch's main hidden stem** (정관격, 식신격, …), with 비견/겁재 month
+  commands resolving to 건록격 / 양인격.
+- **십이운성 (twelve life stages)** — `twelveStage` runs the day master forward
+  from its 장생 branch for yang stems, backward for yin stems, giving the
+  life-stage (장생·목욕·…·양) at each pillar.
+- **신살 (symbolic stars)** — `sinsalList` looks up the classic markers:
+  천을귀인·문창귀인 (by day stem), 도화·역마·화개 (off the day branch's 삼합
+  group), 양인 (yang day stems), and 괴강·백호 (by full 간지).
+
+Every rule above is anchored by reference cases in
+[`__tests__/analysis.test.ts`](./__tests__/analysis.test.ts) (ten-god table,
+the classic 장생 stage table, strength direction, pattern naming, and the
+신살 lookups).
+
 ---
 
 ## 7. Conventions & assumptions

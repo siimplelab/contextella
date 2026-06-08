@@ -9,6 +9,8 @@ export * from './pillars';
 export * from './profile';
 export * from './compat';
 export * from './daily';
+export * from './analysis';
+export * from './compat-detail';
 
 export interface SajuProfile {
   pillars: FourPillars;

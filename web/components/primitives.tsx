@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { ELEMENTS, accentInk } from '@/lib/tokens';
 import { relationLabel } from '@/lib/i18n';
 import type { ElementKey, Person, Lang } from '@/lib/types';
@@ -51,31 +51,11 @@ export function ElementOrb({ element = 'water', size = 120, animated = true }: {
   );
 }
 
-export function StarField({ count = 60, seed = 1, opacity = 0.85 }: { count?: number; seed?: number; opacity?: number }) {
-  const stars = useMemo(() => {
-    const rand = (() => {
-      let s = seed;
-      return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    })();
-    return Array.from({ length: count }, () => ({
-      x: rand() * 100, y: rand() * 100,
-      r: 0.4 + rand() * 1.4,
-      o: 0.3 + rand() * 0.7,
-      twinkle: 2 + rand() * 4,
-      delay: rand() * 4,
-    }));
-  }, [count, seed]);
-  return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none"
-         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity }}>
-      {stars.map((s, i) => (
-        <circle key={i} cx={s.x} cy={s.y} r={s.r * 0.3} fill="#fff" opacity={s.o}>
-          <animate attributeName="opacity" values={`${s.o};${s.o * 0.2};${s.o}`}
-                   dur={`${s.twinkle}s`} begin={`${s.delay}s`} repeatCount="indefinite" />
-        </circle>
-      ))}
-    </svg>
-  );
+// Background starfield — intentionally disabled per design. Kept as a no-op so
+// the many call sites keep their props/layout; restore the body to bring stars back.
+export function StarField(props: { count?: number; seed?: number; opacity?: number }) {
+  void props; // props kept for call-site compatibility; stars intentionally off
+  return null;
 }
 
 interface VizProps {
@@ -142,47 +122,128 @@ export function PersonNode({ person, x, y, size, isMe, selected, onClick, lang =
   );
 }
 
+// Pack N nodes into concentric rings so they never overlap, no matter how many
+// there are. Inner rings fill first (so high-score people stay near "me"); when a
+// ring is full by arc spacing, the next ring out opens up. The canvas grows with
+// the count instead of cramming everyone into a fixed box.
+function packRings(n: number, opts: { minR: number; ringGap: number; spacing: number }) {
+  const { minR, ringGap, spacing } = opts;
+  const rings: { r: number; count: number }[] = [];
+  let placed = 0, ring = 0;
+  while (placed < n) {
+    const r = minR + ring * ringGap;
+    const cap = Math.max(1, Math.floor((2 * Math.PI * r) / spacing));
+    const take = Math.min(cap, n - placed);
+    rings.push({ r, count: take });
+    placed += take;
+    ring++;
+  }
+  const slots: { r: number; a: number }[] = [];
+  const radii: number[] = [];
+  rings.forEach((rg, ri) => {
+    radii.push(rg.r);
+    // Offset alternate rings by half a step so nodes don't line up radially.
+    const offset = (ri % 2) * (Math.PI / rg.count);
+    for (let i = 0; i < rg.count; i++) {
+      slots.push({ r: rg.r, a: (i / rg.count) * Math.PI * 2 - Math.PI / 2 + offset });
+    }
+  });
+  const outerR = rings.length ? rings[rings.length - 1].r : minR;
+  return { slots, radii, outerR };
+}
+
+// A fixed-size viewport that can pan/scroll across a larger content stage.
+// Native scroll handles touch + trackpad; pointer-drag adds grab-to-pan on the
+// background. Starts centred on the stage. Clicks are suppressed after a drag so
+// panning never accidentally opens a person.
+function PannableCanvas({ viewW, viewH, stageW, stageH, children }:
+  { viewW: number; viewH: number; stageW: number; stageH: number; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const pan = useRef<{ x: number; y: number; sl: number; st: number; moved: boolean } | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollLeft = (stageW - viewW) / 2;
+    el.scrollTop = (stageH - viewH) / 2;
+  }, [stageW, stageH, viewW, viewH]);
+
+  const scrollable = stageW > viewW + 1 || stageH > viewH + 1;
+
+  return (
+    <div
+      ref={ref}
+      onPointerDown={(e) => {
+        const el = ref.current;
+        // Touch / pen use native momentum scrolling; only mice need drag-to-pan.
+        if (!el || !scrollable || e.pointerType !== 'mouse') return;
+        pan.current = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const el = ref.current;
+        const p = pan.current;
+        if (!el || !p) return;
+        const dx = e.clientX - p.x, dy = e.clientY - p.y;
+        if (!p.moved && Math.hypot(dx, dy) < 5) return;
+        p.moved = true;
+        el.scrollLeft = p.sl - dx;
+        el.scrollTop = p.st - dy;
+      }}
+      onPointerUp={() => { if (pan.current && !pan.current.moved) pan.current = null; }}
+      onPointerLeave={() => { pan.current = null; }}
+      onClickCapture={(e) => {
+        if (pan.current?.moved) { e.preventDefault(); e.stopPropagation(); }
+        pan.current = null;
+      }}
+      style={{
+        position: 'relative', width: viewW, height: viewH, overflow: 'auto',
+        borderRadius: 20, touchAction: scrollable ? 'pan-x pan-y' : 'auto',
+        cursor: scrollable ? 'grab' : 'default',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none', msOverflowStyle: 'none',
+      }}
+    >
+      <div style={{ position: 'relative', width: stageW, height: stageH }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function ConstellationViz({ network, width = 360, height = 320, accent = '#E8D4A2', onSelect, selectedId, lang }: VizProps) {
-  const cx = width / 2, cy = height / 2;
   const me = network.find(p => p.id === 'me');
   const others = network.filter(p => p.id !== 'me');
-  const maxR = Math.min(width, height) * 0.42;
 
-  const positions = useMemo(() => {
-    const map: Record<string, { x: number; y: number }> = { me: { x: cx, y: cy } };
-    const n = others.length;
-    // Spread members evenly so nodes never collide, then keep a gentle Saju-based
-    // jitter so each chart still feels personal. Radius encodes the bond: a
-    // stronger score sits closer to "me". A floor keeps everyone clear of the orb.
-    const minR = 86, outerR = maxR * 0.9;
-    const ordered = [...others].sort((a, b) => (a.angle ?? 0) - (b.angle ?? 0));
+  const { positions, radii, stageW, stageH, cx, cy } = useMemo(() => {
+    // High-score people fill inner rings; the canvas grows to fit everyone with
+    // guaranteed clear spacing (node + label) so nothing ever overlaps.
+    const ordered = [...others].sort((a, b) => (b.score ?? 60) - (a.score ?? 60));
+    const { slots, radii, outerR } = packRings(ordered.length, { minR: 110, ringGap: 92, spacing: 74 });
+    const margin = 64;
+    const content = 2 * (outerR + margin);
+    const sw = Math.max(content, width);
+    const sh = Math.max(content, height);
+    const ccx = sw / 2, ccy = sh / 2;
+    const map: Record<string, { x: number; y: number }> = { me: { x: ccx, y: ccy } };
     ordered.forEach((p, i) => {
-      const base = (i / Math.max(1, n)) * Math.PI * 2 - Math.PI / 2;
-      const jitter = (((p.angle ?? 0) % 22) - 11) * (Math.PI / 180);
-      const a = base + jitter;
-      const norm = Math.max(0, Math.min(1, ((p.score ?? 60) - 40) / 55));
-      const r = minR + (1 - norm) * (outerR - minR);
-      map[p.id] = { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+      const s = slots[i];
+      map[p.id] = { x: ccx + Math.cos(s.a) * s.r, y: ccy + Math.sin(s.a) * s.r };
     });
-    return map;
+    return { positions: map, radii, stageW: sw, stageH: sh, cx: ccx, cy: ccy };
   }, [network, width, height]);
 
   return (
-    <div style={{ position: 'relative', width, height }}>
-      <StarField count={50} seed={3} opacity={0.5} />
-      <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
+    <PannableCanvas viewW={width} viewH={height} stageW={stageW} stageH={stageH}>
+      <StarField count={Math.min(260, Math.round(50 * (stageW * stageH) / (width * height)))} seed={3} opacity={0.5} />
+      <svg width={stageW} height={stageH} style={{ position: 'absolute', inset: 0 }}>
         <defs>
           <radialGradient id="aura-me" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={accent} stopOpacity="0.5" />
             <stop offset="100%" stopColor={accent} stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="line-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={accent} stopOpacity="0.85" />
-            <stop offset="100%" stopColor={accent} stopOpacity="0.25" />
-          </linearGradient>
         </defs>
-        {[0.45, 0.75, 1].map((f, i) => (
-          <circle key={i} cx={cx} cy={cy} r={maxR * f}
+        {radii.map((r, i) => (
+          <circle key={i} cx={cx} cy={cy} r={r}
                   fill="none" stroke={accent} strokeOpacity={0.1} strokeDasharray="2 4" />
         ))}
         <circle cx={cx} cy={cy} r={62} fill="url(#aura-me)" />
@@ -213,45 +274,43 @@ export function ConstellationViz({ network, width = 360, height = 320, accent = 
                     size={52} selected={selectedId === p.id}
                     onClick={() => onSelect?.(p.id)} lang={lang} />
       ))}
-    </div>
+    </PannableCanvas>
   );
 }
 
 export function OrbitalViz({ network, width = 360, height = 320, accent = '#E8D4A2', onSelect, selectedId, lang }: VizProps) {
-  const cx = width / 2, cy = height / 2;
   const me = network.find(p => p.id === 'me');
   const others = network.filter(p => p.id !== 'me');
-  const maxR = Math.min(width, height) * 0.42;
-  const ring = (score: number) => score >= 80 ? 0 : score >= 65 ? 1 : 2;
-  const ringR = [maxR * 0.6, maxR * 0.82, maxR * 1.0];
 
-  const positions = useMemo(() => {
-    const buckets: Person[][] = [[], [], []];
-    others.forEach(p => buckets[ring(p.score ?? 70)].push(p));
-    const map: Record<string, { x: number; y: number }> = { me: { x: cx, y: cy } };
-    buckets.forEach((arr, ri) => {
-      const n = arr.length || 1;
-      arr.forEach((p, i) => {
-        const a = (i / n) * Math.PI * 2 + ri * 0.7;
-        map[p.id] = { x: cx + Math.cos(a) * ringR[ri], y: cy + Math.sin(a) * ringR[ri] };
-      });
+  const { positions, radii, stageW, stageH, cx, cy } = useMemo(() => {
+    const ordered = [...others].sort((a, b) => (b.score ?? 70) - (a.score ?? 70));
+    const { slots, radii, outerR } = packRings(ordered.length, { minR: 104, ringGap: 88, spacing: 72 });
+    const margin = 62;
+    const content = 2 * (outerR + margin);
+    const sw = Math.max(content, width);
+    const sh = Math.max(content, height);
+    const ccx = sw / 2, ccy = sh / 2;
+    const map: Record<string, { x: number; y: number }> = { me: { x: ccx, y: ccy } };
+    ordered.forEach((p, i) => {
+      const s = slots[i];
+      map[p.id] = { x: ccx + Math.cos(s.a) * s.r, y: ccy + Math.sin(s.a) * s.r };
     });
-    return map;
+    return { positions: map, radii, stageW: sw, stageH: sh, cx: ccx, cy: ccy };
   }, [network, width, height]);
 
   return (
-    <div style={{ position: 'relative', width, height }}>
-      <StarField count={40} seed={7} opacity={0.4} />
-      <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
+    <PannableCanvas viewW={width} viewH={height} stageW={stageW} stageH={stageH}>
+      <StarField count={Math.min(220, Math.round(40 * (stageW * stageH) / (width * height)))} seed={7} opacity={0.4} />
+      <svg width={stageW} height={stageH} style={{ position: 'absolute', inset: 0 }}>
         <defs>
           <radialGradient id="orb-aura" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={accent} stopOpacity="0.45" />
             <stop offset="100%" stopColor={accent} stopOpacity="0" />
           </radialGradient>
         </defs>
-        {ringR.map((r, i) => (
+        {radii.map((r, i) => (
           <circle key={i} cx={cx} cy={cy} r={r}
-                  fill="none" stroke={accent} strokeOpacity={0.18 - i * 0.04} strokeWidth={1} />
+                  fill="none" stroke={accent} strokeOpacity={Math.max(0.05, 0.18 - i * 0.04)} strokeWidth={1} />
         ))}
         <circle cx={cx} cy={cy} r={62} fill="url(#orb-aura)" />
       </svg>
@@ -262,7 +321,7 @@ export function OrbitalViz({ network, width = 360, height = 320, accent = '#E8D4
                     size={50} selected={selectedId === p.id}
                     onClick={() => onSelect?.(p.id)} lang={lang} />
       ))}
-    </div>
+    </PannableCanvas>
   );
 }
 

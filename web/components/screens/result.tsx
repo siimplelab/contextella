@@ -1,11 +1,15 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ELEMENTS, SANS, cosmicBg, formatDate, pillBtn, accentInk } from '@/lib/tokens';
-import { I18N, pick } from '@/lib/i18n';
+import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, pillBtn, accentInk } from '@/lib/tokens';
+import { I18N, pick, relationLabel } from '@/lib/i18n';
 import { useStore, accentHex } from '@/lib/store';
-import { sajuFromBirth, compatibility, synergyConflict } from '@/lib/saju';
+import {
+  sajuFromBirth, compatibility, synergyConflict,
+  compatDetail, PILLAR_BOND_LABEL, BOND_INFO, COMPAT_STAR_INFO,
+} from '@/lib/saju';
 import { CompatGauge, CompatStars, CompatMerge, StarField, ElementOrb } from '@/components/primitives';
+import { SajuDetail } from '@/components/saju-detail';
 
 export default function ResultScreen({ personId }: { personId: string }) {
   const router = useRouter();
@@ -26,8 +30,12 @@ export default function ResultScreen({ personId }: { personId: string }) {
     if (!a || !b) return null;
     const { score, factors } = compatibility(a.pillars, b.pillars);
     const { synergies, conflicts } = synergyConflict(factors, lang);
-    return { score, synergies, conflicts };
+    return { score, synergies, conflicts, detail: compatDetail(a.pillars, b.pillars) };
   }, [me, person, lang]);
+
+  // Whether the person's birth data yields a readable chart — gates the
+  // full Saju reading (rendered by <SajuDetail/>).
+  const chartOk = useMemo(() => !!person && !!sajuFromBirth(person.birth, person.time), [person]);
 
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
@@ -70,6 +78,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
 
   const synergies = compat?.synergies ?? [];
   const conflicts = compat?.conflicts ?? [];
+  const cdetail = compat?.detail ?? null;
 
   const stagger = (i: number): React.CSSProperties => ({ animation: `ctx-rise .5s cubic-bezier(.22,.7,.3,1) both ${0.05 + i * 0.07}s` });
 
@@ -110,8 +119,37 @@ export default function ResultScreen({ personId }: { personId: string }) {
           </div>
         </div>
 
+        {chartOk && (
+          <div style={{ margin: '4px 16px 0' }}>
+            <div style={{ padding: '14px 4px 6px', display: 'flex', alignItems: 'baseline',
+                          justifyContent: 'space-between', ...stagger(1) }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: fg, letterSpacing: -0.5 }}>
+                {pick(lang, {
+                  ko: `${person.name_ko}의 사주`, en: `${person.name_ko}’s chart`,
+                  ja: `${person.name_ko}の四柱`, zh: `${person.name_ko}的四柱`,
+                  es: `La carta de ${person.name_ko}`,
+                })}
+              </div>
+              <div style={{ fontSize: 12, color: sub }}>
+                {formatDate(parseBirth(person.birth)!, lang)}
+                {person.relation ? ` · ${relationLabel(person.relation, lang)}` : ''}
+              </div>
+            </div>
+
+            <SajuDetail person={person} lang={lang} dark={dark} accent={accent} />
+
+
+            <div style={{ marginTop: 22, padding: '0 4px', fontSize: 13, fontWeight: 600, color: fg,
+                          letterSpacing: -0.3, ...stagger(6) }}>
+              {pick(lang, {
+                ko: '나와의 인연', en: 'How you two meet', ja: '私との縁',
+                zh: '与我的缘分', es: 'Cómo se encuentran' })}
+            </div>
+          </div>
+        )}
+
         <div style={{
-          margin: '20px 16px 12px', borderRadius: 28, padding: '24px 20px',
+          margin: '12px 16px 12px', borderRadius: 28, padding: '24px 20px',
           background: cardBg, border: `0.5px solid ${cardBorder}`,
           backdropFilter: 'blur(24px)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative',
@@ -130,6 +168,143 @@ export default function ResultScreen({ personId }: { personId: string }) {
                          elementA={me.element} elementB={person.element} dark={dark} />
           )}
         </div>
+
+        {cdetail && (
+          <div style={{ margin: '0 16px 12px' }}>
+            {/* 궁합 차원별 분석 — scored dimensions */}
+            <div style={{ borderRadius: 24, padding: '20px', background: cardBg,
+                          border: `0.5px solid ${cardBorder}`, ...stagger(2) }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: fg, letterSpacing: -0.3, marginBottom: 4 }}>
+                {pick(lang, { ko: '궁합 차원별 분석', en: 'Compatibility by dimension',
+                              ja: '相性の次元別分析', zh: '维度匹配分析', es: 'Compatibilidad por dimensión' })}
+              </div>
+              <div style={{ fontSize: 12, color: sub, lineHeight: 1.5, marginBottom: 14 }}>
+                {pick(lang, {
+                  ko: '두 사주가 만나는 네 가지 결을 따로 들여다봤어요.',
+                  en: 'The four currents where your two charts meet, read one by one.',
+                  ja: '二つの四柱が出会う四つの機微を個別に見ました。',
+                  zh: '逐一审视两张命盘相遇的四种纹理。',
+                  es: 'Las cuatro corrientes donde se cruzan ambas cartas, una a una.',
+                })}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+                {cdetail.dimensions.map(d => {
+                  const c = d.tone === 'good' ? '#7BD89A' : d.tone === 'tense' ? '#E8A4B5' : accentInk(accent, dark);
+                  return (
+                    <div key={d.key}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>{d.label[lang]}</span>
+                        <span style={{ fontSize: 12, color: c, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{d.value}</span>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 3, overflow: 'hidden',
+                                    background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(26,21,56,0.06)' }}>
+                        <div style={{ width: `${d.value}%`, height: '100%', borderRadius: 3, background: c }} />
+                      </div>
+                      <div style={{ fontSize: 11.5, color: sub, marginTop: 4, lineHeight: 1.45 }}>{d.text[lang]}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 용신 교류 — does each supply what the other needs */}
+            <div style={{ marginTop: 10, borderRadius: 24, padding: '18px 16px', background: cardBg,
+                          border: `0.5px solid ${cardBorder}`, ...stagger(3) }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2, marginBottom: 12 }}>
+                {pick(lang, { ko: '서로의 용신 교류', en: 'Useful-god exchange',
+                              ja: '互いの用神の交流', zh: '彼此用神交流', es: 'Intercambio de dios útil' })}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {([
+                  // Supplier phrases are pre-composed per language so no name or
+                  // particle is ever concatenated (avoids "서연가" style mistakes).
+                  { who: pick(lang, { ko: '내게 필요한 기운', en: 'What I need', ja: '私に必要な気', zh: '我所需之气', es: 'Lo que necesito' }),
+                    god: cdetail.usefulGod.aGod, supply: cdetail.usefulGod.bSupply,
+                    enough: pick(lang, { ko: '상대가 충분히 채워줘요', en: 'well supplied by the other', ja: '相手が十分に満たす', zh: '对方充分补足', es: 'lo aporta bien el otro' }),
+                    weak: pick(lang, { ko: '상대에게선 약한 편이에요', en: 'weak from the other', ja: '相手からは弱め', zh: '来自对方较弱', es: 'débil desde el otro' }) },
+                  { who: pick(lang, { ko: '상대에게 필요한 기운', en: 'What the other needs', ja: '相手に必要な気', zh: '对方所需之气', es: 'Lo que el otro necesita' }),
+                    god: cdetail.usefulGod.bGod, supply: cdetail.usefulGod.aSupply,
+                    enough: pick(lang, { ko: '내가 충분히 채워줘요', en: 'well supplied by me', ja: '私が十分に満たす', zh: '由我充分补足', es: 'lo aporto bien yo' }),
+                    weak: pick(lang, { ko: '내게선 약한 편이에요', en: 'weak from me', ja: '私からは弱め', zh: '来自我较弱', es: 'débil desde mí' }) },
+                ]).map((row, i) => {
+                  const el = ELEMENTS[row.god];
+                  const enough = row.supply >= 20;
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ width: 14, height: 14, borderRadius: 7, flexShrink: 0,
+                                     background: `radial-gradient(circle at 35% 30%, ${el.c1}, ${el.c2} 65%, ${el.c3})` }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, color: fg, letterSpacing: -0.2 }}>
+                          {row.who} · <span style={{ fontWeight: 600 }}>{el.short[lang]}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: enough ? '#7BD89A' : sub, marginTop: 1 }}>
+                          {enough ? row.enough : row.weak}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                                     color: enough ? '#7BD89A' : sub }}>{row.supply}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 기둥별 인연 — branch bond at each pillar */}
+            <div style={{ marginTop: 10, borderRadius: 24, padding: '18px 16px', background: cardBg,
+                          border: `0.5px solid ${cardBorder}`, ...stagger(4) }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2, marginBottom: 12 }}>
+                {pick(lang, { ko: '기둥별 인연', en: 'Bond at each pillar', ja: '柱ごとの縁',
+                              zh: '各柱之缘', es: 'Vínculo por pilar' })}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {cdetail.pillarBonds.map(b => {
+                  const info = BOND_INFO[b.type];
+                  const c = info.tone === 'good' ? '#7BD89A' : info.tone === 'tense' ? '#E8A4B5' : sub;
+                  return (
+                    <div key={b.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: sub, width: 96, flexShrink: 0, letterSpacing: -0.2 }}>
+                        {PILLAR_BOND_LABEL[b.key][lang]}
+                      </span>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: c, width: 52, flexShrink: 0 }}>
+                        {info.name[lang]}
+                      </span>
+                      <span style={{ fontSize: 11.5, color: sub, flex: 1, minWidth: 0, lineHeight: 1.4 }}>
+                        {info.gloss[lang]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 관계 신살 — relationship stars between the two charts */}
+            {cdetail.stars.length > 0 && (
+              <div style={{ marginTop: 10, borderRadius: 24, padding: '18px 16px', background: cardBg,
+                            border: `0.5px solid ${cardBorder}`, ...stagger(5) }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>
+                  {pick(lang, { ko: '관계 신살', en: 'Relationship stars', ja: '関係の神殺',
+                                zh: '关系神煞', es: 'Estrellas de la relación' })}
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {cdetail.stars.map(key => {
+                    const info = COMPAT_STAR_INFO[key];
+                    const c = info.tone === 'good' ? '#7BD89A' : info.tone === 'tense' ? '#E8A4B5' : accentInk(accent, dark);
+                    return (
+                      <div key={key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0,
+                                       background: c, boxShadow: `0 0 8px ${c}88` }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>{info.name[lang]}</span>
+                          <span style={{ fontSize: 12, color: sub, marginLeft: 8 }}>{info.gloss[lang]}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ margin: '0 16px', display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
           <div style={{

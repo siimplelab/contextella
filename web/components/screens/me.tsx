@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { ELEMENTS, SANS, cosmicBg, formatDate, parseBirth, LANGS, accentInk } from '@/lib/tokens';
 import { pick } from '@/lib/i18n';
-import type { ElementKey, Lang } from '@/lib/types';
+import type { Lang } from '@/lib/types';
 import { useStore, accentHex } from '@/lib/store';
 import { ElementOrb, StarField } from '@/components/primitives';
+import { SajuDetail } from '@/components/saju-detail';
 import { ScreenHeader, BottomTabBar } from '@/components/chrome';
 
 export default function MeScreen() {
@@ -14,7 +15,6 @@ export default function MeScreen() {
   const dark = useStore(s => s.tweaks.darkMode);
   const accent = accentHex(useStore(s => s.tweaks.accent));
   const me = useStore(s => s.me);
-  const meSaju = useStore(s => s.meSaju);
   const universes = useStore(s => s.universes);
   const tweaks = useStore(s => s.tweaks);
   const setTweak = useStore(s => s.setTweak);
@@ -28,16 +28,6 @@ export default function MeScreen() {
     : 'linear-gradient(155deg, rgba(255,255,255,0.85), rgba(240,233,255,0.6))';
   const cardBorder = `0.5px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)'}`;
   const e = ELEMENTS[me.element];
-
-  const pillars = (meSaju?.pillars ?? []).map(p => ({
-    label: p.label[lang],
-    sky: p.stem[lang],
-    earth: p.branch[lang],
-    el: p.element,
-  }));
-
-  const balanceOrder: ElementKey[] = ['water', 'wood', 'fire', 'earth', 'metal'];
-  const balance = balanceOrder.map(el => ({ el, val: meSaju?.balance[el] ?? 0 }));
   const totalPeople = universes.reduce((s, u) => s + u.members.length, 0);
 
   return (
@@ -86,90 +76,9 @@ export default function MeScreen() {
           </div>
         </div>
 
-        <div style={{
-          margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
-          background: cardBg, border: cardBorder,
-          animation: 'ctx-rise .5s ease both .05s',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>
-              {pick(lang, {
-                ko: '사주 · 네 기둥', en: 'Saju · Four Pillars',
-                ja: '四柱 · 四つの柱', zh: '四柱 · 四根支柱',
-                es: 'Saju · Cuatro pilares',
-              })}
-            </div>
-            <div style={{ fontSize: 11, color: sub }}>
-              {pick(lang, {
-                ko: '나를 이루는 결', en: 'Your grain',
-                ja: 'あなたを成す機微', zh: '构成你的纹理',
-                es: 'La textura que te forma',
-              })}
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {pillars.map((p, i) => {
-              const el = ELEMENTS[p.el];
-              return (
-                <div key={i} style={{
-                  padding: '12px 8px', borderRadius: 14,
-                  background: `${el.c3}18`, border: `0.5px solid ${el.c3}33`, textAlign: 'center',
-                  animation: `ctx-rise .5s ease both ${0.1 + i * 0.04}s`,
-                }}>
-                  <div style={{ fontSize: 10, color: sub, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                    {p.label}
-                  </div>
-                  <div style={{
-                    margin: '8px auto 6px', width: 28, height: 28, borderRadius: 14,
-                    background: `radial-gradient(circle at 35% 30%, ${el.c1}, ${el.c2} 65%, ${el.c3})`,
-                    boxShadow: `0 2px 8px ${el.c3}55`,
-                  }} />
-                  <div style={{ fontSize: 13, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>{p.sky}</div>
-                  <div style={{ fontSize: 11, color: sub, marginTop: 2 }}>{p.earth}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{
-          margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
-          background: cardBg, border: cardBorder,
-          animation: 'ctx-rise .5s ease both .1s',
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: fg, letterSpacing: -0.2, marginBottom: 14 }}>
-            {pick(lang, { ko: '오행 분포', en: 'Element balance', ja: '五行のバランス', zh: '五行分布', es: 'Equilibrio de elementos' })}
-          </div>
-          <div style={{ display: 'flex', height: 16, borderRadius: 8, overflow: 'hidden',
-                        background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(26,21,56,0.05)' }}>
-            {balance.map((b, i) => {
-              const el = ELEMENTS[b.el];
-              return (
-                <div key={b.el} style={{
-                  width: `${b.val}%`, height: '100%',
-                  background: `linear-gradient(135deg, ${el.c1}, ${el.c3})`,
-                  animation: `ctx-fade .8s ease both ${i * 0.06}s`,
-                }} />
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-            {balance.map(b => {
-              const el = ELEMENTS[b.el];
-              return (
-                <div key={b.el} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 5,
-                    background: `linear-gradient(135deg, ${el.c1}, ${el.c3})` }} />
-                  <span style={{ fontSize: 11, color: sub }}>
-                    {el.short[lang]}
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: fg,
-                                 fontVariantNumeric: 'tabular-nums' }}>{b.val}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {/* Full in-depth Saju reading for the user — same engine as a person's
+            detail page, in first-person ("나") framing. */}
+        <SajuDetail person={me} lang={lang} dark={dark} accent={accent} self />
 
         <div style={{
           margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
