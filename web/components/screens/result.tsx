@@ -180,7 +180,7 @@ export default function ResultScreen({ personId }: { personId: string }) {
               </div>
               <div style={{ fontSize: 12, color: sub, lineHeight: 1.5, marginBottom: 14 }}>
                 {pick(lang, {
-                  ko: '두 사주가 만나는 네 가지 결을 따로 들여다봤어요.',
+                  ko: '두 사주가 만나는 네 가지 궁합을 따로 들여다봤어요.',
                   en: 'The four currents where your two charts meet, read one by one.',
                   ja: '二つの四柱が出会う四つの機微を個別に見ました。',
                   zh: '逐一审视两张命盘相遇的四种纹理。',

@@ -1,14 +1,14 @@
 'use client';
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ELEMENTS, SANS, cosmicBg, shade } from '@/lib/tokens';
+import { ELEMENTS, SANS, cosmicBg, shade, accentInk } from '@/lib/tokens';
 import { useStore, accentHex } from '@/lib/store';
-import { flowFor, flowTone } from '@/lib/saju';
+import { flowFor, flowTone, compatibility, sajuFromBirth } from '@/lib/saju';
 import { pick, relationLabel } from '@/lib/i18n';
-import { StarField } from '@/components/primitives';
+import { StarField, ConstellationViz, OrbitalViz, GridViz } from '@/components/primitives';
 import { ScreenHeader, BottomTabBar, FloatingAddBtn } from '@/components/chrome';
-import { AddPersonSheet } from '@/components/sheets';
-import type { Lang, PersonWithFlow } from '@/lib/types';
+import { AddPersonSheet, NewUniverseSheet } from '@/components/sheets';
+import type { Lang, Person, PersonWithFlow } from '@/lib/types';
 
 export default function RelationsScreen() {
   const router = useRouter();
@@ -16,11 +16,34 @@ export default function RelationsScreen() {
   const dark = useStore(s => s.tweaks.darkMode);
   const accent = accentHex(useStore(s => s.tweaks.accent));
   const universes = useStore(s => s.universes);
+  const me = useStore(s => s.me);
+  const vizStyle = useStore(s => s.tweaks.vizStyle);
+  const activeUniverseId = useStore(s => s.activeUniverseId);
+  const setActiveUniverse = useStore(s => s.setActiveUniverse);
 
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState<'flow' | 'name' | 'universe'>('flow');
   const [addOpen, setAddOpen] = useState(false);
+  const [newUniverseOpen, setNewUniverseOpen] = useState(false);
+
+  // The active universe drives the constellation view + the 궁합 bar chart.
+  const universe = universes.find(u => u.id === activeUniverseId) || universes[0];
+  const network: Person[] = me ? [me, ...(universe?.members ?? [])] : (universe?.members ?? []);
+
+  // 궁합 (compatibility) score of every member against "me", for the bar chart.
+  const compatBars = useMemo(() => {
+    if (!me || !universe) return [];
+    const a = sajuFromBirth(me.birth, me.time);
+    if (!a) return [];
+    return universe.members
+      .map(p => {
+        const b = sajuFromBirth(p.birth, p.time);
+        return { id: p.id, name: p.name_ko, element: p.element,
+                 score: b ? compatibility(a.pillars, b.pillars).score : 50 };
+      })
+      .sort((x, y) => y.score - x.score);
+  }, [me, universe]);
 
   const fg = dark ? '#fff' : '#1A1538';
   const sub = dark ? 'rgba(255,255,255,0.6)' : 'rgba(26,21,56,0.6)';
@@ -81,6 +104,104 @@ export default function RelationsScreen() {
             es: `${allPeople.length} personas en tus universos`,
           })}
         />
+
+        {/* 유니버스 UI — the same constellation view as the home screen, scoped
+            to the active universe, with a switcher above it. */}
+        {universe && me && (
+          <div style={{ marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 8, padding: '6px 18px 0', overflowX: 'auto' }}>
+              {universes.map(u => {
+                const active = u.id === universe.id;
+                return (
+                  <button key={u.id} onClick={() => setActiveUniverse(u.id)} style={{
+                    minHeight: 38, padding: '0 16px', borderRadius: 19,
+                    background: active
+                      ? (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.85)')
+                      : 'transparent',
+                    border: `0.5px solid ${dark ? 'rgba(255,255,255,0.10)' : 'rgba(26,21,56,0.10)'}`,
+                    color: active ? fg : sub, fontSize: 14, fontWeight: active ? 600 : 500,
+                    letterSpacing: -0.2, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', gap: 8, fontFamily: SANS,
+                  }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 4,
+                      background: active ? accent : (dark ? 'rgba(255,255,255,0.25)' : 'rgba(26,21,56,0.2)'),
+                      boxShadow: active ? `0 0 8px ${accent}` : 'none' }} />
+                    <span>{u.name_ko}</span>
+                    <span style={{ fontSize: 11, color: active ? accentInk(accent, dark) : sub,
+                                   fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{u.members.length}</span>
+                  </button>
+                );
+              })}
+              <button onClick={() => setNewUniverseOpen(true)} style={{
+                minHeight: 38, width: 38, borderRadius: 19, background: 'transparent',
+                border: `0.5px dashed ${dark ? 'rgba(255,255,255,0.20)' : 'rgba(26,21,56,0.18)'}`,
+                color: sub, cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, lineHeight: 1, fontFamily: SANS,
+              }} aria-label="add universe">+</button>
+            </div>
+
+            <div key={universe.id} style={{ padding: '4px 8px 0', animation: 'ctx-fade .35s ease both' }}>
+              {vizStyle === 'constellation' && (
+                <ConstellationViz network={network} width={358} height={300}
+                                  accent={accent} onSelect={id => id !== 'me' && router.push(`/result/${id}`)} lang={lang} />
+              )}
+              {vizStyle === 'orbital' && (
+                <OrbitalViz network={network} width={358} height={300}
+                            accent={accent} onSelect={id => id !== 'me' && router.push(`/result/${id}`)} lang={lang} />
+              )}
+              {vizStyle === 'grid' && (
+                <div style={{ padding: '12px 12px 0' }}>
+                  <GridViz network={network} accent={accent}
+                           onSelect={id => id !== 'me' && router.push(`/result/${id}`)} lang={lang} dark={dark} />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 궁합 bar chart — every member of this universe ranked by 궁합 with me. */}
+        {compatBars.length > 0 && (
+          <div style={{ margin: '14px 16px 0', borderRadius: 24, padding: '18px 16px',
+                        background: dark
+                          ? 'linear-gradient(155deg, rgba(120,90,200,0.14), rgba(60,40,140,0.05))'
+                          : 'linear-gradient(155deg, rgba(255,255,255,0.85), rgba(240,233,255,0.6))',
+                        border: `0.5px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)'}` }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: fg, letterSpacing: -0.2 }}>
+                {pick(lang, { ko: '궁합 한눈에', en: 'Compatibility at a glance', ja: '相性をひと目で',
+                              zh: '一眼看匹配', es: 'Compatibilidad de un vistazo' })}
+              </div>
+              <div style={{ fontSize: 11, color: sub }}>{universe?.name_ko}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {compatBars.map((b, i) => {
+                const c = b.score >= 70 ? '#7BD89A' : b.score >= 55 ? accentInk(accent, dark) : b.score >= 40 ? '#E8D4A2' : '#E8A4B5';
+                const el = ELEMENTS[b.element];
+                return (
+                  <button key={b.id} onClick={() => router.push(`/result/${b.id}`)} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: 0,
+                    background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: SANS, animation: `ctx-rise .4s ease both ${i * 0.04}s`,
+                  }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, flexShrink: 0,
+                                   background: `radial-gradient(circle at 35% 30%, ${el.c1}, ${el.c2} 65%, ${el.c3})` }} />
+                    <span style={{ width: 56, flexShrink: 0, fontSize: 12.5, color: fg, letterSpacing: -0.2,
+                                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</span>
+                    <span style={{ flex: 1, minWidth: 0, height: 10, borderRadius: 5, overflow: 'hidden',
+                                   background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(26,21,56,0.06)' }}>
+                      <span style={{ display: 'block', width: `${b.score}%`, height: '100%', borderRadius: 5,
+                                     background: `linear-gradient(90deg, ${c}, ${shade(c, -12)})`,
+                                     transition: 'width .6s cubic-bezier(.3,.7,.4,1)' }} />
+                    </span>
+                    <span style={{ width: 26, flexShrink: 0, textAlign: 'right', fontSize: 13, fontWeight: 700,
+                                   color: c, fontVariantNumeric: 'tabular-nums' }}>{b.score}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div style={{ padding: '16px 20px 0' }}>
           <div style={{
@@ -185,6 +306,7 @@ export default function RelationsScreen() {
       <BottomTabBar activeTab="rel" />
       <AddPersonSheet open={addOpen} onClose={() => setAddOpen(false)}
                       onSaved={(id) => router.push(`/result/${id}`)} />
+      <NewUniverseSheet open={newUniverseOpen} onClose={() => setNewUniverseOpen(false)} />
     </div>
   );
 }

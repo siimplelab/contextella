@@ -93,7 +93,7 @@ const PHRASES: Record<string, Record<Lang, string>> = {
     es: 'Nacidos de la misma textura: se entienden sin hablar',
   },
   dm_generative: {
-    ko: '한 사람이 다른 사람을 자라게 하는, 생(生)의 결',
+    ko: '한 사람이 다른 사람을 자라게 하는, 생(生)의 궁합',
     en: 'One nourishes the other — a generative current',
     ja: '一方がもう一方を育てる、相生の流れ',
     zh: '一方滋养着另一方——相生的流动',
@@ -177,7 +177,7 @@ const PHRASES: Record<string, Record<Lang, string>> = {
     es: 'El trabajo y los planes compartidos fluyen bien',
   },
   month_h3: {
-    ko: '같이 무언가를 키워나가기 좋은 결',
+    ko: '같이 무언가를 키워나가기 좋은 궁합',
     en: 'A grain well-suited to building something together',
     ja: '共に何かを育てていくのに良い機微',
     zh: '适合一起培育某些事物的纹理',
@@ -198,7 +198,7 @@ const PHRASES: Record<string, Record<Lang, string>> = {
     es: 'Al final del día, descansan a gusto juntos',
   },
   hour_h3: {
-    ko: '깊은 시간을 함께 보내기 좋은 결',
+    ko: '깊은 시간을 함께 보내기 좋은 궁합',
     en: 'A grain for sharing the quieter hours',
     ja: '静かな時間を共に過ごすのに良い機微',
     zh: '适合一起度过静谧时光的纹理',
@@ -222,14 +222,14 @@ const PHRASES: Record<string, Record<Lang, string>> = {
 
 const FALLBACK: Record<'synergy' | 'conflict', Record<Lang, string>> = {
   synergy: {
-    ko: '잔잔하지만 오래가는 결을 가진 사이',
+    ko: '잔잔하지만 오래가는 궁합을 가진 사이',
     en: 'A quiet grain that lasts',
     ja: '穏やかながら長く続く機微を持つ間柄',
     zh: '拥有平静却长久纹理的关系',
     es: 'Una textura serena que perdura',
   },
   conflict: {
-    ko: '특별히 조심할 결은 보이지 않아요',
+    ko: '특별히 조심할 궁합은 보이지 않아요',
     en: 'No grain that needs special care',
     ja: '特に気をつけるべき機微は見当たりません',
     zh: '没有需要特别留心的纹理',

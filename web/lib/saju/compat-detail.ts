@@ -52,13 +52,13 @@ function dayMasterDim(ea: ElementKey, eb: ElementKey): CompatDimension {
       'Nacidos del mismo elemento: se entienden con facilidad.');
   } else if (GENERATES[ea] === eb || GENERATES[eb] === ea) {
     value = 90;
-    text = L('한쪽이 다른 쪽을 살리는 상생의 결입니다.',
+    text = L('한쪽이 다른 쪽을 살리는 상생의 궁합입니다.',
       'One nourishes the other — a generative bond.',
       '一方が他方を生かす相生の機微。', '一方滋养另一方，相生之缘。',
       'Uno nutre al otro: un vínculo generativo.');
   } else {
     value = 42;
-    text = L('서로의 속도와 방향이 다를 수 있는 상극의 결입니다.',
+    text = L('서로의 속도와 방향이 다를 수 있는 상극의 궁합입니다.',
       'A controlling relation — pace and direction may differ.',
       '互いの速さや方向が異なりうる相剋の機微。', '相克之缘，节奏方向或有不同。',
       'Una relación de control: ritmo y rumbo pueden diferir.');
@@ -74,7 +74,7 @@ function dayBranchDim(ba: number, bb: number): CompatDimension {
     'A steady, easy companionship.', '無難に寄り添える間柄。', '平稳相伴的关系。',
     'Una compañía estable y llevadera.');
   if (inHarmony6(ba, bb)) {
-    value = 92; text = L('일상의 결이 자연스럽게 맞물립니다 (육합).',
+    value = 92; text = L('일상이 자연스럽게 맞물리는 궁합입니다 (육합).',
       'Daily rhythms lock together naturally (육합).', '日常の機微が自然にかみ合う(六合)。',
       '日常自然契合（六合）。', 'Los ritmos diarios encajan solos (육합).');
   } else if (harmony3Element(ba, bb)) {
@@ -173,17 +173,17 @@ export const PILLAR_BOND_LABEL: Record<'year' | 'month' | 'day' | 'hour', Record
 
 export const BOND_INFO: Record<BondType, { name: Record<Lang, string>; tone: CompatTone; gloss: Record<Lang, string> }> = {
   h6: { name: L('육합', '육합 (harmony)', '六合', '六合', '육합'), tone: 'good',
-        gloss: L('끌어당기고 화합하는 결', 'drawn together, in accord', '惹かれ合い和合', '相吸和合', 'atracción y acuerdo') },
+        gloss: L('끌어당기고 화합하는 궁합', 'drawn together, in accord', '惹かれ合い和合', '相吸和合', 'atracción y acuerdo') },
   h3: { name: L('삼합', '삼합 (alliance)', '三合', '三合', '삼합'), tone: 'good',
-        gloss: L('함께 큰 흐름을 이루는 결', 'forming a larger current', '大きな流れを成す', '共成大势', 'forman una gran corriente') },
+        gloss: L('함께 큰 흐름을 이루는 궁합', 'forming a larger current', '大きな流れを成す', '共成大势', 'forman una gran corriente') },
   clash: { name: L('충', '충 (clash)', '沖', '冲', '충'), tone: 'tense',
-        gloss: L('부딪히며 자극하는 결', 'clashing, stimulating', 'ぶつかり刺激し合う', '冲撞激荡', 'choque y estímulo') },
+        gloss: L('부딪히며 자극하는 궁합', 'clashing, stimulating', 'ぶつかり刺激し合う', '冲撞激荡', 'choque y estímulo') },
   punish: { name: L('형', '형 (friction)', '刑', '刑', '형'), tone: 'tense',
-        gloss: L('서로를 시험하는 결', 'testing one another', '互いを試す', '彼此考验', 'se ponen a prueba') },
+        gloss: L('서로를 시험하는 궁합', 'testing one another', '互いを試す', '彼此考验', 'se ponen a prueba') },
   harm: { name: L('해', '해 (harm)', '害', '害', '해'), tone: 'tense',
-        gloss: L('미세하게 어긋나는 결', 'small misalignments', '微かにずれる', '细微相妨', 'leves desencuentros') },
+        gloss: L('미세하게 어긋나는 궁합', 'small misalignments', '微かにずれる', '细微相妨', 'leves desencuentros') },
   none: { name: L('무난', 'neutral', '無難', '平', 'neutral'), tone: 'neutral',
-        gloss: L('특별한 작용 없이 잔잔한 결', 'quiet, no strong pull', '特に作用なく穏やか', '平和无强作用', 'tranquilo, sin tirón fuerte') },
+        gloss: L('특별한 작용 없이 잔잔한 궁합', 'quiet, no strong pull', '特に作用なく穏やか', '平和无强作用', 'tranquilo, sin tirón fuerte') },
 };
 
 // ---------------------------------------------------------------------------
@@ -194,15 +194,15 @@ export type CompatStarKey = 'yukhap' | 'samhap' | 'chung' | 'wonjin' | 'dohwa';
 
 export const COMPAT_STAR_INFO: Record<CompatStarKey, { name: Record<Lang, string>; tone: CompatTone; gloss: Record<Lang, string> }> = {
   yukhap: { name: L('천생연분 · 육합', 'Made for each other · 육합', '天生の縁 · 六合', '天生一对 · 六合', 'Hechos el uno para el otro'), tone: 'good',
-    gloss: L('자연스레 끌리고 오래 함께하는 결', 'a natural, lasting pull', '自然に惹かれ長く続く', '自然相吸、长久', 'una atracción natural y duradera') },
+    gloss: L('자연스레 끌리고 오래 함께하는 궁합', 'a natural, lasting pull', '自然に惹かれ長く続く', '自然相吸、长久', 'una atracción natural y duradera') },
   samhap: { name: L('찰떡궁합 · 삼합', 'Perfect alliance · 삼합', '相性抜群 · 三合', '绝佳搭配 · 三合', 'Alianza perfecta'), tone: 'good',
-    gloss: L('함께 큰일을 도모하기 좋은 결', 'great for building things together', '共に大事を成すに良い', '宜共谋大事', 'ideal para construir juntos') },
+    gloss: L('함께 큰일을 도모하기 좋은 궁합', 'great for building things together', '共に大事を成すに良い', '宜共谋大事', 'ideal para construir juntos') },
   chung: { name: L('애증 · 충', 'Push and pull · 충', '愛憎 · 沖', '爱憎 · 冲', 'Tira y afloja'), tone: 'tense',
-    gloss: L('강하게 끌리지만 부딪히기도 하는 결', 'magnetic yet clashing', '強く惹かれつつ衝突も', '强烈相吸却也冲撞', 'magnético pero chocante') },
+    gloss: L('강하게 끌리지만 부딪히기도 하는 궁합', 'magnetic yet clashing', '強く惹かれつつ衝突も', '强烈相吸却也冲撞', 'magnético pero chocante') },
   wonjin: { name: L('원진살', 'Resentment star · 원진', '怨嗔殺', '怨嗔煞', 'Estrella del rencor'), tone: 'tense',
-    gloss: L('이유 없이 서운함이 쌓이기 쉬운 결', 'unspoken resentment can build', '理由なく不満が募りやすい', '易生无名怨怼', 'puede crecer el rencor callado') },
+    gloss: L('이유 없이 서운함이 쌓이기 쉬운 궁합', 'unspoken resentment can build', '理由なく不満が募りやすい', '易生无名怨怼', 'puede crecer el rencor callado') },
   dohwa: { name: L('도화 교류', 'Peach-blossom draw · 도화', '桃花の交流', '桃花交流', 'Atracción de flor de durazno'), tone: 'good',
-    gloss: L('서로에게 설레고 끌리는 결', 'a flush of mutual attraction', '互いにときめき惹かれる', '彼此心动相吸', 'un flechazo mutuo') },
+    gloss: L('서로에게 설레고 끌리는 궁합', 'a flush of mutual attraction', '互いにときめき惹かれる', '彼此心动相吸', 'un flechazo mutuo') },
 };
 
 // 도화 branch for a reference branch's 삼합 group.
